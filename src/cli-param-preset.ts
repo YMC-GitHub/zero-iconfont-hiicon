@@ -1,6 +1,6 @@
 
 export interface CliParam {
-    name: string, type: string, value: string | boolean | number, desc: string
+    name: string, type: string, value: string | boolean | number, desc: string, optional?: boolean
 }
 
 /**

@@ -13,7 +13,7 @@ export interface paramPluginTsdocOption {
     requires: string,
     omit: string,
     pick: string,
-
+    export: boolean
 }
 
 /**
@@ -35,9 +35,10 @@ export function paramPluginTsdoc(param: CliParam[], head = 'baseOptions', option
     }
 
     // filter-param:ignore-omit,get-pick,include-pick
-    let flitedParam: CliParam[] = []
+    let flitedParam: CliParam[] = param
+
     if (option.omit) {
-        flitedParam = param.filter(item => {
+        flitedParam = flitedParam.filter(item => {
             const { name, type } = item
             const mname = camelize(getParamName(name))
             return !isOneOfThem(mname, option.omit)
@@ -78,6 +79,7 @@ export function paramPluginTsdoc(param: CliParam[], head = 'baseOptions', option
     res = arr.join('\n')
     res = formatText(res, ' ', option.indentSize)
     res = `interface ${head} {\n${res}\n}`
+    if (option.export) res = `export ${res}`
     return res
 }
 
@@ -86,6 +88,7 @@ function isOneOfThem(one: string, them: string) {
     let isReg = them.indexOf('*') >= 0
     let input: string[] = them.split(",").map(v => v.trim()).filter(v => v)
     if (isReg) {
+        // feat: regard * as .*
         let inputReg = input.map(v => v.replace(/\*/g, '.*')).map(v => new RegExp(`^${v}`))
         // list = list.filter(vl => !inputReg.some(reg => reg.test(vl)))
         return inputReg.some(reg => reg.test(one))
