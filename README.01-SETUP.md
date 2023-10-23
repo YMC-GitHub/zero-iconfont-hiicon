@@ -55,25 +55,6 @@ pnpm add -g svgo;
 # https://www.npmjs.com/package/svgtofont
 ```
 
-## use *.svg files
-- [x] in vue.js with npm
-```ts
-import Vue from 'vue'
-import SvgIcon from '../components/SvgIcon'
-
-// register svg-icon component in app level
-Vue.component('svg-icon', SvgIcon)
-
-// import all *.svg files in src/icons/svg dir
-const req = require.context('./svg', false, /\.svg$/)
-const requireAll = requireContext => requireContext.keys().map(requireContext)
-requireAll(req)
-```
-
-```html
-<svg-icon icon-class="home" />
-```
-
 ## use fonts files
 - [x] use font files in the .css file 
 ```css
@@ -186,11 +167,23 @@ requireAll(req)
 ```ts
 //  register svg-icon componnet in your vuejs app
 import IconSvg from '@/components/SvgIcon'
+// import SvgIcon from '../components/SvgIcon'
+
 // register svg-icon componnet in app level
 Vue.component('svg-icon', SvgIcon)
+
+// import all *.svg files in src/icons/svg dir
+const req = require.context('./svg', false, /\.svg$/)
+const requireAll = requireContext => requireContext.keys().map(requireContext)
+requireAll(req)
 ```
 
 ```html
 <!-- use svg-icon component -->
+<svg-icon icon-class="home" />
+```
+
+
+```html
 <svg-icon icon-class="home" />
 ```
