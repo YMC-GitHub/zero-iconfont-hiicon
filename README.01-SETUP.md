@@ -182,8 +182,3 @@ requireAll(req)
 <!-- use svg-icon component -->
 <svg-icon icon-class="home" />
 ```
-
-
-```html
-<svg-icon icon-class="home" />
-```
