@@ -80,6 +80,11 @@ git add .gitattributes ; git commit -m "build(core): set language type displayed
 git add .gitattributes ; git commit -m "build(core): disable other with linguist-detectable for js";
 ```
 
+- [x] design project dirs
+```bash
+git mv iconfont* ./dist ; git mv demo* ./dist;git commit -m "build(core): move iconfont to dist";
+```
+
 
 - [ ] get time with format
 ```bash
