@@ -1,0 +1,30 @@
+{
+  "id": "4297845",
+  "name": "hiicon",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "a small icon for home ui",
+  "glyphs": [
+    {
+      "icon_id": "160001",
+      "name": "home",
+      "font_class": "home",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    },
+    {
+      "icon_id": "288646",
+      "name": "menu",
+      "font_class": "menu",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "8249725",
+      "name": "setting",
+      "font_class": "setting",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    }
+  ]
+}
