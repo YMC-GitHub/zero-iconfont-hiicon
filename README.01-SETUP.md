@@ -1,7 +1,12 @@
 ## make *.svg files
 
-- [x] select/design/upload icon in iconfont.cn icon8s.com
+- [x] make your logo and other images to *.svg files (from *.png,*.jpg files )
+```powershell
+# eg.
+$src="M:\iconfont\hiicon\01\home.png";$des="M:\iconfont\hiicon\01\home.svg";magick convert  $src  $des;
+```
 
+- [ ] merge some *.svg files to one svg file (svg sprite?)
 
 - [x] the main content of this file iconfont.svg
 ```svg
@@ -32,14 +37,6 @@
 
 ```
 
-- [x] make your logo and other images to *.svg files (from *.png,*.jpg files )
-```powershell
-# eg.
-$src="M:\iconfont\hiicon\01\home.png";$des="M:\iconfont\hiicon\01\home.svg";magick convert  $src  $des;
-```
-
-- [ ] some *.svg files to one svg file (svg sprite?)
-
 - [x] *.svg files compression with svgo
 
 ```powershell
@@ -48,6 +45,10 @@ pnpm add -g svgo;
 # svgo home.svg -o home.min.svg
 # svgo -f src/iconfont -o asset/iconfont
 ```
+
+
+## make font files
+- [x] select/design/upload icon in iconfont.cn or  icon8s.com
 
 - [x] *.svg files to \*.css,\*.json,\*.ttf,\*.woff,\*.wof2 fonts (svgtofont)
 ```powershell
