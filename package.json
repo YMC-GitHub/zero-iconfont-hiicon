@@ -1,0 +1,48 @@
+{
+  "name": "@zero/iconfont-hiicon",
+  "version": "1.0.0",
+  "description": "tiny icons in iconfont",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ymc-github/smallts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ymc-github/smallts/issues"
+  },
+  "homepage": "https://github.com/ymc-github/smallts#readme",
+  "files": [
+    "lib"
+  ],
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.mjs",
+      "require": "./lib/index.js"
+    },
+    "./*": "./*"
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "types": "tsc"
+  },
+  "keywords": [
+    "typescipt",
+    "small programs"
+  ],
+  "author": "ymc-github",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/brotli": "^1.3.3",
+    "@types/node": "^20.8.6",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.11"
+  },
+  "dependencies": {
+    "brotli": "^1.3.3",
+    "svgo": "^3.0.2",
+    "svgtofont": "^4.0.0"
+  }
+}
