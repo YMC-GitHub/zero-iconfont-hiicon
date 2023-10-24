@@ -1,9 +1,9 @@
 export enum Iconfont {
-  Home = "iconfont-home",
-  Lock = "iconfont-lock",
-  Setting = "iconfont-setting"
+  Home = "icon-home",
+  Lock = "icon-lock",
+  Setting = "icon-setting"
 }
 
-export type IconfontClassname = "iconfont-home" | "iconfont-lock" | "iconfont-setting"
+export type IconfontClassname = "icon-home" | "icon-lock" | "icon-setting"
 export type IconfontIcon = "home" | "lock" | "setting"
-export const IconfontPrefix = "iconfont-"
+export const IconfontPrefix = "icon-"
