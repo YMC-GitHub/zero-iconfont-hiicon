@@ -1,14 +1,29 @@
 ## make *.svg files
 
-- [x] make your logo and other images to *.svg files (from *.png,*.jpg files )
+- [ ] make your logo and other images to *.svg files (from *.png,*.jpg files )
 ```powershell
 # eg.
-$src="M:\iconfont\hiicon\01\home.png";$des="M:\iconfont\hiicon\01\home.svg";magick convert  $src  $des;
+# $des="M:\zero-iconfont-hiicon\src\assets";$null=mkdir -p "$des" -ErrorAction SilentlyContinue ;
+$src="M:\iconfont\hiicon\01\home.png";$des="M:\zero-iconfont-hiicon\src\assets\home.svg";magick convert  $src  $des;
+```
+
+- [ ] resize svg files
+```bash
+# magick convert -resize 1024x1024 ./svg/2.svg icons/home.svg
+# magick convert -resize 50x50 ./svg/2.svg icons/home.svg
+# $src="M:\iconfont\hiicon\01\home.png";$des="M:\zero-iconfont-hiicon\src\assets\home.svg";magick convert  $src  $des;
+```
+
+- [x] prepare icons to make fonts (copy)
+```bash
+cp ./svg/2.svg icons/home.svg
+cp ./svg/1.svg icons/lock.svg
+cp ./svg/2.svg icons/setting.svg
 ```
 
 - [ ] merge some *.svg files to one svg file (svg sprite?)
 
-- [x] the main content of this file iconfont.svg
+- the main content of this file iconfont.svg
 ```svg
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" >
@@ -42,6 +57,8 @@ $src="M:\iconfont\hiicon\01\home.png";$des="M:\iconfont\hiicon\01\home.svg";magi
 ```powershell
 pnpm add -g svgo;
 
+svgo src/assets/home.svg -o src/assets/home.min.svg
+svgo src/assets/home.svg -o src/assets/icon/home.svg
 # svgo home.svg -o home.min.svg
 # svgo -f src/iconfont -o asset/iconfont
 ```
@@ -52,7 +69,8 @@ pnpm add -g svgo;
 
 - [x] *.svg files to \*.css,\*.json,\*.ttf,\*.woff,\*.wof2 fonts (svgtofont)
 ```powershell
-# pnpm add -g svgtofont;
+pnpm add -g svgtofont;
+svgtofont --sources ./svg --output ./font --fontName uiw-font
 # https://www.npmjs.com/package/svgtofont
 ```
 
@@ -182,4 +200,53 @@ requireAll(req)
 ```html
 <!-- use svg-icon component -->
 <svg-icon icon-class="home" />
+```
+
+
+## ## make font files (npm)
+- [x] install code
+
+- [x] install deps
+```bash
+pnpm install
+
+# read more:
+# pnpm add -P svgo svgtofont
+# pnpm add @types/svgtofont
+# pnpm add -g tsx
+# pnpm add -g terser
+```
+
+- [x] build code to *.js files (dev)
+```bash
+pnpm run dev;
+# then coding:
+# ...
+
+# read more:
+pnpm run build;node lib/index.js;
+# tsx src/index.ts
+```
+
+- [x] build code to *.js files (pro)
+```bash
+pnpm run build;
+```
+
+- [x] run *.js files (pro)
+```bash
+node lib/index.js
+# node bin/index.js
+```
+
+- [x] mini *.js file
+```bash
+# pnpm add -g terser;
+terser ./lib/index.js --compress --mangle --output ./lib/index.min.js
+```
+
+- [x] get file size
+```bash
+#  pnpm add brotli ; pnpm add -D @types/brotli
+# tsx src/cli.ts file-size
 ```
