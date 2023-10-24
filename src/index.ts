@@ -73,7 +73,7 @@ async function main(){
         src: icon, // svg path
         dist: fonts, // output path
         fontName: 'iconfont', // font name
-        // classNamePrefix:'iconfont',
+        classNamePrefix:'icon',
         css: true, // Create CSS files.
         symbolNameDelimiter:'-',
         outSVGPath:true,
