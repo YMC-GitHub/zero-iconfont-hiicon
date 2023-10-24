@@ -50,6 +50,7 @@ git remote add origin git@github.com:YMC-GitHub/zero-iconfont-hiicon.git
 git add .gitignore;git commit -m "build(core): add gitignore";
 git add .gitignore;git commit -m "build(core): set note for go allow list";
 git add .gitignore;git commit -m "build(core): put gitignore to design project dirs";
+git add .gitignore;git commit -m "build(core): put gitignore for npm";
 ```
 
 [fefer: some gitignore template](https://github.com/github/gitignore)
@@ -121,6 +122,16 @@ git add icons/*.ico;git commit -m "build(core): add resources files icon";
 
 git add .vscode/.gitignore;git commit -m "build(core): add gitignore to design project dirs";
 git add .vscode/README.md;git commit -m "docs(core): put vscode editor config files of project level here";
+
+git add svg/.gitignore;git commit -m "build(core): add gitignore to design project dirs";
+git add svg/README.md;git commit -m "docs(core): put *.svg files here";
+
+git add icons/.gitignore;git commit -m "build(core): add gitignore to design project dirs";
+git add icons/README.md;git commit -m "docs(core): put icon files here";
+
+git add fonts/.gitignore;git commit -m "build(core): add gitignore to design project dirs";
+git add fonts/README.md;git commit -m "docs(core): put font files here";
+git add fonts;git commit -m "build(core): put font files here for sharing";
 ```
 
 - [x] add docs about how to setup this
@@ -266,3 +277,12 @@ git add src/chapter02/higo/readme.md; git commit -m "docs(core): use fyne to mak
 git add go.mod go.sum go.work.sum;git commit -m "build(core): put mod and workspace";
 git add src/chapter02/higo/*.go; git commit -m "feat(core): export some func";
 ```
+
+
+- [x] init *.ts  scripts
+```bash
+git add src; git commit -m "feat(core): add *.ts scripts";
+git add package.json vite.config.ts tsconfig.json; git commit -m "build(core): ini npm package";
+git add pnpm-lock.yaml; git commit -m "build(core): lock npm deps";
+```
+
