@@ -1,1 +1,1 @@
-output *.exe files here
+save your source *.svg files here
