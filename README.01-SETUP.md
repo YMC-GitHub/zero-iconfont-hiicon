@@ -203,7 +203,7 @@ requireAll(req)
 ```
 
 
-## ## make font files (npm)
+## make font files (npm)
 - [x] install code
 
 - [x] install deps
@@ -249,4 +249,36 @@ terser ./lib/index.js --compress --mangle --output ./lib/index.min.js
 ```bash
 #  pnpm add brotli ; pnpm add -D @types/brotli
 # tsx src/cli.ts file-size
+```
+
+## zero fonts
+
+- [x] use font on zero project in iconfont.cn
+
+```css
+/* use font on zero project in iconfont.cn */
+
+@font-face {
+  font-family: 'iconfont';
+  src: 
+       url('data:application/x-font-woff2;charset=utf-8;base64,d09GMgABAAAAAASUAAsAAAAACUAAAARHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHFQGYACDDAqGBIUFATYCJAMQCwoABCAFhGcHPxv0B8gOJR2RwKCAoYBhPHyuke8n2T1GxehaHk+oCXxZAhlbIWtsNZKwB/P/nv4tBjiT0sFIMqFBoZPewe3oR/oP/ib+uFc1c9rP+QPwzDE1+MFiEyhAe9tuReq9ClMX9YJO0Md7BJqtSMI9mlWAAdObTVABHPG5rUFRHTfFTBPQV0zKADc0auupW4t4AyrSU+5twOvk9+O/sNAnqTL3lGOXM0lw/j14z+U9/q8B8gdRi4DTEypkLFzMEueGXSfwstQCnuYuF98UBYqwZdH/PX6BSHTtf3mEJBM1V9WKxI105hcIQPALJH6ZZMSX2Y1owTaxBcTRuiSr+0P5/LazYRyTLk4XvdR26bj1ojW5qNmxzS6QoU4ELtMS49tBerzd0DCePAyRZ/cBSO3k8J7s7OI8MDKS70Lk+Q5A+QgzDRbAXHDiPWKV1rFi2Spb26eE7dKt1tjdPGLp0gqCWS8uUq4X8DZbWz8+doUNvlzjgC0ut7F5gtss2WJXcScXX7IE8o5MRNstWyZRbhXHt9nZPavAn7WSWKGxd8Z3BxExp2MisMNRRNzNpDhsL1rhulLr5EbsE+Dx5/KjK45F4pE3EmMr9gRjLs3jjx9rnjyZePZM+/Rp1fbj4yfP7tXuO3dq4sSZPZrdfnFza7taI+Avr18wsrNlp1vG5tvL68pblTpAvmqlq4m7SYOJhSl23jvDB/fJ8D6PN+SOkUJoGJb/LisKMe/3cm/MW5g2AvTRRsHGkxvRgJ/Ug32H+LlJxanFYbwVj+W60vIMi/aMjdWI/1Xzesf/G5BKM+98ZMN/R4uGq/Y1yDwmsojLdMG4sZnDuclFcyjDmRwXPA4R4Qs19KMWzmPVx8QS8/qn9tVumzLbLWIzXHE4Dlt/MjYiprs8O/Aq4xWk+bjPSvb2C9fNclRBjNeVwK6MLDY8RtbHUXHWUb68JewbGlSe1R25OqoqIqJa6vNjs7Q642Pc08XiYZiHCVaEJ1jPBwG4C2DvaT7CCwCA/D5pgL0p3uvc/w9Nc//iiv8NHQlf9VseY9vXmu2TFNib4oNp5TRKTBb9MepLE1GLFaaULlkg+Qtdb9VKIqHZi7IHXF+351toeriS0KingKTBiD5DzRhiC3EOKi3WoNZoHzSbl7m7RQ8VnihNmDIAEDrtgKTdO8g6XcMW4jOo9PsAtU5/odmZMDmuxVQI01mqCVIk0tyBiIVKBe1rYTJoGcW0yJrYtjhBsWoxRpFQNKSezaYUFLvGCnUrEwYhjdCsUo5kSbdRMpkSUbFKCSWEqAhCVZxAQHd9CypUykE6FqUJRCEhmnVAiAkpKdAROqz+vTIURguZJuxELOFgqVlIgyNCoUImYLNViklNL3KKWitGGAiiIWgsZOQQWYqDIjNTSghV9yQJihCEEi1IqMQReGj0VBV6vEZ+e/ugmbu0RIocJSrlqlJO8f2xihY9NQWhWMEAAAA=') format('woff2'),
+       url('//at.alicdn.com/t/c/font_4297845_ghb4bshau4n.woff?t=1698035724441') format('woff'),
+       url('//at.alicdn.com/t/c/font_4297845_ghb4bshau4n.ttf?t=1698035724441') format('truetype'),
+       url('//at.alicdn.com/t/c/font_4297845_ghb4bshau4n.svg?t=1698035724441#iconfont') format('svg');
+}
+```
+
+- [x] use font on zero project in github (for china)
+
+```css
+/* use font on zero project in github  */
+/* https://ghproxy.com/https://raw.githubusercontent.com/YMC-GitHub/zero-iconfont-hiicon/main/dist/ */
+@font-face {
+  font-family: 'iconfont';
+  src: 
+       url('data:application/x-font-woff2;charset=utf-8;base64,d09GMgABAAAAAASUAAsAAAAACUAAAARHAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHFQGYACDDAqGBIUFATYCJAMQCwoABCAFhGcHPxv0B8gOJR2RwKCAoYBhPHyuke8n2T1GxehaHk+oCXxZAhlbIWtsNZKwB/P/nv4tBjiT0sFIMqFBoZPewe3oR/oP/ib+uFc1c9rP+QPwzDE1+MFiEyhAe9tuReq9ClMX9YJO0Md7BJqtSMI9mlWAAdObTVABHPG5rUFRHTfFTBPQV0zKADc0auupW4t4AyrSU+5twOvk9+O/sNAnqTL3lGOXM0lw/j14z+U9/q8B8gdRi4DTEypkLFzMEueGXSfwstQCnuYuF98UBYqwZdH/PX6BSHTtf3mEJBM1V9WKxI105hcIQPALJH6ZZMSX2Y1owTaxBcTRuiSr+0P5/LazYRyTLk4XvdR26bj1ojW5qNmxzS6QoU4ELtMS49tBerzd0DCePAyRZ/cBSO3k8J7s7OI8MDKS70Lk+Q5A+QgzDRbAXHDiPWKV1rFi2Spb26eE7dKt1tjdPGLp0gqCWS8uUq4X8DZbWz8+doUNvlzjgC0ut7F5gtss2WJXcScXX7IE8o5MRNstWyZRbhXHt9nZPavAn7WSWKGxd8Z3BxExp2MisMNRRNzNpDhsL1rhulLr5EbsE+Dx5/KjK45F4pE3EmMr9gRjLs3jjx9rnjyZePZM+/Rp1fbj4yfP7tXuO3dq4sSZPZrdfnFza7taI+Avr18wsrNlp1vG5tvL68pblTpAvmqlq4m7SYOJhSl23jvDB/fJ8D6PN+SOkUJoGJb/LisKMe/3cm/MW5g2AvTRRsHGkxvRgJ/Ug32H+LlJxanFYbwVj+W60vIMi/aMjdWI/1Xzesf/G5BKM+98ZMN/R4uGq/Y1yDwmsojLdMG4sZnDuclFcyjDmRwXPA4R4Qs19KMWzmPVx8QS8/qn9tVumzLbLWIzXHE4Dlt/MjYiprs8O/Aq4xWk+bjPSvb2C9fNclRBjNeVwK6MLDY8RtbHUXHWUb68JewbGlSe1R25OqoqIqJa6vNjs7Q642Pc08XiYZiHCVaEJ1jPBwG4C2DvaT7CCwCA/D5pgL0p3uvc/w9Nc//iiv8NHQlf9VseY9vXmu2TFNib4oNp5TRKTBb9MepLE1GLFaaULlkg+Qtdb9VKIqHZi7IHXF+351toeriS0KingKTBiD5DzRhiC3EOKi3WoNZoHzSbl7m7RQ8VnihNmDIAEDrtgKTdO8g6XcMW4jOo9PsAtU5/odmZMDmuxVQI01mqCVIk0tyBiIVKBe1rYTJoGcW0yJrYtjhBsWoxRpFQNKSezaYUFLvGCnUrEwYhjdCsUo5kSbdRMpkSUbFKCSWEqAhCVZxAQHd9CypUykE6FqUJRCEhmnVAiAkpKdAROqz+vTIURguZJuxELOFgqVlIgyNCoUImYLNViklNL3KKWitGGAiiIWgsZOQQWYqDIjNTSghV9yQJihCEEi1IqMQReGj0VBV6vEZ+e/ugmbu0RIocJSrlqlJO8f2xihY9NQWhWMEAAAA=') format('woff2'),
+       url('https://ghproxy.com/https://raw.githubusercontent.com/YMC-GitHub/zero-iconfont-hiicon/main/dist/iconfont.woff?t=1698035724441') format('woff'),
+       url('https://ghproxy.com/https://raw.githubusercontent.com/YMC-GitHub/zero-iconfont-hiicon/main/dist/iconfont.ttf?t=1698035724441') format('truetype'),
+       url('https://ghproxy.com/https://raw.githubusercontent.com/YMC-GitHub/zero-iconfont-hiicon/main/dist/iconfont.svg?t=1698035724441#iconfont') format('svg');
+}
 ```
