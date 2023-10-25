@@ -284,5 +284,12 @@ git add src/chapter02/higo/*.go; git commit -m "feat(core): export some func";
 git add src; git commit -m "feat(core): add *.ts scripts";
 git add package.json vite.config.ts tsconfig.json; git commit -m "build(core): ini npm package";
 git add pnpm-lock.yaml; git commit -m "build(core): lock npm deps";
+git add src; git commit -m "feat(core): put scripts for cdn";
 ```
 
+- [x] set icon class prefix
+```bash
+git add fonts;git commit -m "feat(core): change icon class prefix to icon";
+git add src/index.ts;git commit -m "feat(core): change icon class prefix to icon";
+
+```
