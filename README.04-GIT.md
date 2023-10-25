@@ -293,3 +293,15 @@ git add fonts;git commit -m "feat(core): change icon class prefix to icon";
 git add src/index.ts;git commit -m "feat(core): change icon class prefix to icon";
 
 ```
+
+- [x] update scripts
+```bash
+git add src/cli.ts src/touch.ts;git commit -m "build(core): add script to touch file in nodejs";
+git add src/cli.ts src/touch.ts;git commit -m "build(core): put script to touch file in nodejs to share its util";
+git add src/cli.ts src/editjson.ts;git commit -m "build(core): add script to edit json file in nodejs";
+git add src/cli.ts src/editjson.ts;git commit -m "build(core): put script to edit json file in nodejs";
+
+git add package.json;git commit -m "build(core): enable npm workspace";
+
+git add package/noop;git commit -m "build(core): add script package noop in this workspace";
+```
