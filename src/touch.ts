@@ -16,9 +16,10 @@ function makedirs(loc:string){
 
 export function touch(loc:string){
     // do not anything when exist loc
-    if(existsSync(loc)) return loc
+    if(existsSync(loc)) return false
 
     makedirs(loc)
     // add an empty text file
     saveTextFile(loc)
+    return true
 }
