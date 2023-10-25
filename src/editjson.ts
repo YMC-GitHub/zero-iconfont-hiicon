@@ -114,3 +114,80 @@ function kwExclude(cur:string[],todel:string[]){
 function kwDup(cur:string[]){
     return Array.from(new Set([...cur]))
 }
+
+// editjson-transform-name
+
+export interface EditNameOption {
+    ns:string
+    org:string,
+    name:string,
+}
+export type EditNameOptionLike = Partial<EditNameOption>
+const builtinEditNameOption= {org:'',name:'',ns:'name'} 
+
+export function editName(data:any,opts?:EditNameOptionLike){
+    let buitinOption:EditNameOption = builtinEditNameOption
+    let option =opts? {...buitinOption,...opts}:buitinOption
+    let {name,org,ns}=option
+    let dataInNs=data[ns]
+    let res:string=dataInNs?dataInNs:''
+    data[ns]=genPkgName(option)
+    return res
+}
+
+function genPkgName(data:EditNameOptionLike){
+    let {name,org}=data
+    return org?`@${org}/${name}`:name
+}
+
+
+// editjson-transform-github
+
+export interface EditRepoOption {
+    user:string
+    repo:string,
+    name?:string,
+    packageLoc?:string,
+    branch?:string,
+    mono?:boolean
+}
+export type EditRepoOptionLike = Partial<EditRepoOption>
+const builtinEditRepoOption= {user:'',repo:'',name:'',mono:false,branch:'main',packageLoc:'packages'} 
+export function editRepo(data:any,opts?:EditRepoOptionLike){
+    let buitinOption:EditRepoOption = builtinEditRepoOption
+    let option =opts? {...buitinOption,...opts}:buitinOption
+    let {user,repo,name,mono}=option
+    if(mono){
+
+    }
+    let text = ['https://github.com',user,repo].join('/')
+
+    data['repository']={
+        "repository": {
+            "type": "git",
+            "url": `git+${text}.git`
+          },
+    }
+    data['bugs']={
+        "bugs": {
+            "url": `${text}/issues`
+          },
+    }
+    data['homepage'] = mono?`${text}/${getMonoHomePageSuffix(option)}#readme`:`${text}#readme`
+   
+}
+function getMonoHomePageSuffix(data:EditRepoOptionLike){
+    let {branch,packageLoc,name}=data
+    return ['blob',branch,packageLoc,name].join("/")
+}
+
+// "repository": {
+//     "type": "git",
+//     "url": "git+https://github.com/ymc-github/smallts.git"
+//   },
+//   "bugs": {
+//     "url": "https://github.com/ymc-github/smallts/issues"
+//   },
+//   "homepage": "https://github.com/ymc-github/smallts#readme",
+
+//  "homepage": "https://github.com/ymc-github/js-idea/blob/main/packages/extend-string#readme",

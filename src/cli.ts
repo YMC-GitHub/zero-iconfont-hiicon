@@ -7,7 +7,7 @@ import {getFileSize,toKeyValTree,toMarkdownTable,writeMarkdownFile} from "./file
 
 import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
 import {touch} from "./touch"
-import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords} from "./editjson"
+import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords,editName,editRepo} from "./editjson"
 
 
 
@@ -96,7 +96,7 @@ function cliGetValue(data:NanoArgsData,opts?:CliGetCmdOptionLike,def?:any){
         cmd = (cmd!=undefined && cmdInOption)?cmdInOption : cmd; //cmd in _  important!
     }
     if(option.mode ==='flags-important'){
-        cmd = cmdInOption?cmdInOption : cmd; //cmd in flags important!
+        cmd = cmdInOption!=undefined?cmdInOption : cmd; //cmd in flags important!
     }
 
     // ensure string and avoid undefined
@@ -212,6 +212,81 @@ async function main(){
         let ns = cliGetCmd(cliArgs,{name:'ns',index:-1,mode:'flags-important'},'keywords')
 
         editKeywords(data,{include,exclude,sep,ns})
+        writeJsonFileSync(location,data)
+    }
+
+    if(valIsOneOfList(cmd,cmdListify('edit-name'))){
+        // get working dir
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        log(`[${cmd}] workspace: ${ws}`)
+
+        // supoort sortjsonkey --file xx 
+        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+
+        let location:string = join(ws,file)
+        // todo:join -- join,abs,rel-to-rcd,like-slash
+        log(`[${cmd}] read ${location}`)
+        let data = readJsonFileSync(location)
+
+        // supoort sortjsonkey --ns keywords
+        let ns = cliGetCmd(cliArgs,{name:'--ns',index:-1,mode:'flags-important'},'name')
+        let org = cliGetCmd(cliArgs,{name:'-o,--org',index:-1,mode:'flags-important'},'')
+        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'')
+        editName(data,{ns,name,org})
+        writeJsonFileSync(location,data)
+    }
+
+
+    if(valIsOneOfList(cmd,cmdListify('edit-bool'))){
+        // get working dir
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        log(`[${cmd}] workspace: ${ws}`)
+
+        // supoort sortjsonkey --file xx 
+        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+
+        let location:string = join(ws,file)
+        // todo:join -- join,abs,rel-to-rcd,like-slash
+        log(`[${cmd}] read ${location}`)
+        let data = readJsonFileSync(location)
+
+        // supoort sortjsonkey --ns keywords
+        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'private')
+        let value = cliGetValue(cliArgs,{name:'-v,--value',index:-1,mode:'flags-important'})
+
+        log([name,value])
+        if(value !==undefined){
+            data[name]=value
+        }
+        writeJsonFileSync(location,data)
+    }
+
+    // editRepo
+    if(valIsOneOfList(cmd,cmdListify('edit-repo'))){
+        // get working dir
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        log(`[${cmd}] workspace: ${ws}`)
+
+        // supoort sortjsonkey --file xx 
+        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+
+        let location:string = join(ws,file)
+        // todo:join -- join,abs,rel-to-rcd,like-slash
+        log(`[${cmd}] read ${location}`)
+        let data = readJsonFileSync(location)
+
+        // supoort sortjsonkey --ns keywords
+        let user = cliGetCmd(cliArgs,{name:'-u,--user',index:-1,mode:'flags-important'},'ymc-github')
+        let repo = cliGetCmd(cliArgs,{name:'-r,--repo',index:-1,mode:'flags-important'},'noop')
+        let mono = cliGetValue(cliArgs,{name:'-m,--mono',index:-1,mode:'flags-important'})
+        let packageLoc = cliGetCmd(cliArgs,{name:'-l,--packageLoc',index:-1,mode:'flags-important'})
+        let branch = cliGetCmd(cliArgs,{name:'-b,--branch',index:-1,mode:'flags-important'})
+        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'')
+        log([packageLoc])
+        editRepo(data,{user,repo,mono:mono?true:false,name,packageLoc,branch})
         writeJsonFileSync(location,data)
     }
 
