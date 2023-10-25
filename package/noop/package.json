@@ -1,0 +1,36 @@
+{
+  "name": "@zero/noop",
+  "version": "1.0.0",
+  "description": "do nothing",
+  "keywords": [
+    "zero",
+    "noop",
+    "typescript",
+    "do nothing"
+  ],
+  "scripts": {
+    "types": "tsc",
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "mini:js": "terser --compress --mangle -o lib/index.min.js -- lib/index.js"
+  },
+  "files": [
+    "package.json",
+    "lib"
+  ],
+  "author": "yemiancheng <ymc.github@gmail.com> (https://github.com/ymc-github)",
+  "license": "MIT",
+  "private": false,
+  "repository": {
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/ymc-github/zero-iconfont-hiicon.git"
+    }
+  },
+  "bugs": {
+    "bugs": {
+      "url": "https://github.com/ymc-github/zero-iconfont-hiicon/issues"
+    }
+  },
+  "homepage": "https://github.com/ymc-github/zero-iconfont-hiicon/blob/main/package/noop#readme"
+}
