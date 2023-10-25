@@ -282,3 +282,25 @@ terser ./lib/index.js --compress --mangle --output ./lib/index.min.js
        url('https://ghproxy.com/https://raw.githubusercontent.com/YMC-GitHub/zero-iconfont-hiicon/main/dist/iconfont.svg?t=1698035724441#iconfont') format('svg');
 }
 ```
+
+##  usse fonts (cdn)
+- [jsdiliver](https://www.jsdelivr.com/) -  include all resources of NPM, github and wordpress.
+
+- [x] jsdiliver for github resources
+```css
+/* register font-family */
+@font-face {
+  font-family: "iconfont";
+  src: url('//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.eot?t=1698068730733'); /* IE9*/
+  src: url('//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.eot?t=1698068730733#iefix') format('embedded-opentype'), /* IE6-IE8 */
+  url("//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.woff2?t=1698068730733") format("woff2"),
+  url("//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.woff?t=1698068730733") format("woff"),
+  url('//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.ttf?t=1698068730733') format('truetype'), /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+  url('//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.svg?t=1698068730733#iconfont') format('svg'); /* iOS 4.1- */
+}
+```
+
+```bash
+# info css cdn for jsdiliver
+tsx ./src/cli.ts css-cdn
+```
