@@ -1,14 +1,14 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs'
-
 import parse from "./nano-args"
+import type {NanoArgsData} from "./nano-args"
+
 import { getFileList } from './file-list'
 import {getFileSize,toKeyValTree,toMarkdownTable,writeMarkdownFile} from "./file-size"
 
 import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
-
 import {touch} from "./touch"
+import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords} from "./editjson"
 
-import type {NanoArgsData} from "./nano-args"
 
 
 const {log}=console
@@ -26,6 +26,11 @@ function valIsOneOfList(val: any, list:any[]) {
 function cmdListify(cmd:string){
     return cmd.split(",").map(v=>v.trim()).filter(v=>v)
 }
+// mock path.join
+function join(...pathLike:string[]){
+    return pathLike.join('/').replace(/\/{2,}/,'/')
+}
+
 
 interface CliGetCmdOption {
     name:string,
@@ -35,7 +40,40 @@ interface CliGetCmdOption {
 }
 type CliGetCmdOptionLike = Partial<CliGetCmdOption>
 
-function cliGetCmd(data:NanoArgsData,opts?:CliGetCmdOptionLike):string{
+function cliGetCmd(data:NanoArgsData,opts?:CliGetCmdOptionLike,def:string=''){
+    let cmd = cliGetValue(data,opts)
+    let res:string=''
+    // ensure string and avoid undefined
+    res= cmd!==undefined?cmd.toString():''
+    // use the default value 
+    res= res?res:def
+    return res
+}
+
+// -w,--workspace -> [s,l]
+function cliGetPureName(name:string){
+    let [sl] = name.trim().split(" ")
+    let [s,l] = sl.split(",").map(v=>v.trim().replace(/^-+/,'')).filter(v=>v)
+    return [s,l].join(",")
+}
+
+// cliGetValueByName({flags:{w:true}},'-w') -> true
+// cliGetValueByName({flags:{w:true}},'-w,--workspace') -> true
+function cliGetValueByName(data:NanoArgsData,name:string){
+    let pname = cliGetPureName(name).split(",")
+    let  {flags,_,extras} =data
+    let res
+    for (let index = 0; index < pname.length; index++) {
+        const pni = pname[index];
+        if(pni in flags){
+            res=flags[pni]
+            break;
+        }
+    }
+   return res
+}
+
+function cliGetValue(data:NanoArgsData,opts?:CliGetCmdOptionLike,def?:any){
 
     let buitinOption:CliGetCmdOption = {name:'cmd',mode:'flags-important',index:0}
     let option =opts? {...buitinOption,...opts}:buitinOption
@@ -51,7 +89,7 @@ function cliGetCmd(data:NanoArgsData,opts?:CliGetCmdOptionLike):string{
 
     // use the cmd in flags 
     // 'ns --cmd file-size' -> 'file-size'
-    let cmdInOption = flags[option.name?option.name:'cmd']
+    let cmdInOption = cliGetValueByName(data,option.name)
 
     // use cmd in _ or use cmd in flags ?
     if(option.mode ==='_-important'){
@@ -60,9 +98,14 @@ function cliGetCmd(data:NanoArgsData,opts?:CliGetCmdOptionLike):string{
     if(option.mode ==='flags-important'){
         cmd = cmdInOption?cmdInOption : cmd; //cmd in flags important!
     }
+
     // ensure string and avoid undefined
-    res= cmd?cmd.toString():''
-    return res
+    // res= cmd?cmd.toString():''
+    // use the default value 
+    // res= res?res:def
+
+    cmd = cmd !=undefined?cmd:def
+    return cmd
 }
 
 
@@ -125,7 +168,52 @@ async function main(){
         touch(file)
     }
 
-    
+    if(valIsOneOfList(cmd,cmdListify('sortjsonkey,sjkey'))){
+        // get working dir
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        log(`[${cmd}] workspace: ${ws}`)
+
+        // supoort sortjsonkey --file xx and compact with sortjsonkey xx
+        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+
+        let location:string = join(ws,file)
+
+        log(`[${cmd}] read ${location}`)
+        let data = readJsonFileSync(location)
+        log(`[${cmd}] list json keys : ${Object.keys(data)}`)
+        data=sortJsonByKeys(data,`name,version,description,author,license,bugs,homepage,devDependencies`)
+        // name,version,description,main,devDependencies,scripts,repository,keywords,author,license,bugs,homepage
+        writeJsonFileSync(location,data)
+        //
+    }
+
+    if(valIsOneOfList(cmd,cmdListify('edit-keywords'))){
+        // get working dir
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        log(`[${cmd}] workspace: ${ws}`)
+
+        // supoort sortjsonkey --file xx 
+        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+
+        let location:string = join(ws,file)
+        // todo:join -- join,abs,rel-to-rcd,like-slash
+        log(`[${cmd}] read ${location}`)
+        let data = readJsonFileSync(location)
+
+        // supoort sortjsonkey --include a,d
+        let include = cliGetCmd(cliArgs,{name:'include',index:-1,mode:'flags-important'},'')
+        // supoort sortjsonkey --exclude a,b,c,d
+        let exclude = cliGetCmd(cliArgs,{name:'exclude',index:-1,mode:'flags-important'},'')
+        // supoort sortjsonkey --sep ,
+        let sep = cliGetCmd(cliArgs,{name:'sep',index:-1,mode:'flags-important'},',')
+        // supoort sortjsonkey --ns keywords
+        let ns = cliGetCmd(cliArgs,{name:'ns',index:-1,mode:'flags-important'},'keywords')
+
+        editKeywords(data,{include,exclude,sep,ns})
+        writeJsonFileSync(location,data)
+    }
 
 
     if(valIsOneOfList(cmd,cmdListify('file-size,2'))){
