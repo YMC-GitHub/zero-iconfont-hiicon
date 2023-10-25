@@ -4,12 +4,12 @@ import { readFileSync, writeFileSync, readdirSync, existsSync, statSync,mkdirSyn
 import { dirname,resolve,join} from 'path'
 const {log}=console
 
-function saveTextFile(loc:string,text=''){
+export function saveTextFile(loc:string,text=''){
     makedirs(loc)
     log(`[info] out: ${loc}`)
     writeFileSync(loc,text)
 }
-function makedirs(loc:string){
+export function makedirs(loc:string){
     let dir = dirname(resolve(loc))
     if(!existsSync(dir)) mkdirSync(dir,{recursive:true})
 }
