@@ -300,6 +300,7 @@ terser ./lib/index.js --compress --mangle --output ./lib/index.min.js
 }
 ```
 
+- [x] info css cdn for jsdiliver
 ```bash
 # info css cdn for jsdiliver
 tsx ./src/cli.ts css-cdn
