@@ -6,6 +6,7 @@ import {getFileSize,toKeyValTree,toMarkdownTable,writeMarkdownFile} from "./file
 
 import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
 
+import {touch} from "./touch"
 
 import type {NanoArgsData} from "./nano-args"
 
@@ -45,8 +46,8 @@ function cliGetCmd(data:NanoArgsData,opts?:CliGetCmdOptionLike):string{
     // use the first value in _ as cmd 
     // 'ns file-size' -> 'file-size'
     // let [cmd] = _
-    // use the index value in _ as cmd 
-    let cmd = _[option.index]
+    // use the index value in _ as cmd ,when index is < 0, means that not use index
+    let cmd =option.index<0?undefined: _[option.index]
 
     // use the cmd in flags 
     // 'ns --cmd file-size' -> 'file-size'
@@ -54,7 +55,7 @@ function cliGetCmd(data:NanoArgsData,opts?:CliGetCmdOptionLike):string{
 
     // use cmd in _ or use cmd in flags ?
     if(option.mode ==='_-important'){
-        cmd = (!cmd && cmdInOption)?cmdInOption : cmd; //cmd in _  important!
+        cmd = (cmd!=undefined && cmdInOption)?cmdInOption : cmd; //cmd in _  important!
     }
     if(option.mode ==='flags-important'){
         cmd = cmdInOption?cmdInOption : cmd; //cmd in flags important!
@@ -106,10 +107,26 @@ async function main(){
 
     log(`[info] nano parse result`,decodeJSON(cliArgs))
 
-    let cmd = cliGetCmd(cliArgs)
+    // get cmd
+    let cmd = cliGetCmd(cliArgs,{name:'cmd',index:0,mode:'flags-important'})
     
+    if(valIsOneOfList(cmd,cmdListify('touch,add-txt-file'))){
+        // get working dir
+        let wkd:string=''
+        // - supoort touch --wkd xx 
+        let wkdInCmd = cliGetCmd(cliArgs,{name:'wkd',index:-1,mode:'flags-important'})
+        wkd=getValue(wkdInCmd,'./')
+        log(`[${cmd}] workspace: ${wkd}`)
+
+        // supoort touch --file xx and compact with touch xx
+        let file = cliGetCmd(cliArgs,{name:'file',index:1,mode:'flags-important'})
+        file=getValue(file,'')
+        log(`[${cmd}] touch ${file}`)
+        touch(file)
+    }
 
     
+
 
     if(valIsOneOfList(cmd,cmdListify('file-size,2'))){
         // file-zise ./packages/jcm
@@ -166,15 +183,13 @@ async function main(){
         let text :string=''
       
 
-        // text=loadTextFile(`fonts/iconfont.css`)
+        text=loadTextFile(`fonts/iconfont.css`)
         // // todo: slice @font-face  { xxx }
-        // let cdncss:string=''
+        let cdncss:string=''
 
         // cdncss=toFontCssCdn({text,cdn:'//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.'})
-        // log(cdncss)
-
-        // cdncss=toFontCssCdn({text,cdn:'//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/fonts/iconfont.'})
-        // log(cdncss)
+        cdncss=toFontCssCdn({text,cdn:'//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/fonts/iconfont.'})
+        log(cdncss)
 
         // https://juejin.cn/post/6844903758942453768
         // log(cdncss.match(/@font-face \{(\n|.)*/im))
@@ -188,8 +203,17 @@ async function main(){
         log(`[info] staticaly & github: `,getCdnJsdelivrUrl(data,'//cdn.staticaly.com'))
         // log(`[info] staticaly & npm:`)
         // log(getCdnJsdelivrUrl([...data.slice(0,4),'npm'],'//cdn.staticaly.com'))
-
     }
+
+    // todo: fetch svg file to collect *.svg files saving in <root>/svg dir
+    //svg-fetch
+    // https://www.w3schools.com/icons/google_icons_action.asp
+    // https://github.com/FortAwesome/Font-Awesome/blob/6.x/svgs/regular/window-restore.svg
+
+    // https://www.npmjs.com/search?q=stream%20fetch
+    // todo: fetch data from remote with stream
+    // pnpm add  meros
+
 
 }
 runasync(main)
