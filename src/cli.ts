@@ -4,6 +4,9 @@ import parse from "./nano-args"
 import { getFileList } from './file-list'
 import {getFileSize,toKeyValTree,toMarkdownTable,writeMarkdownFile} from "./file-size"
 
+import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
+
+
 import type {NanoArgsData} from "./nano-args"
 
 
@@ -151,9 +154,48 @@ async function main(){
 
     }
 
+
+    if(valIsOneOfList(cmd,cmdListify('css-cdn'))){
+        log(`[css-cdn] get cdn for iconfont.css`)
+
+        let wkd = './'
+        let wkdInCmd = cliGetCmd(cliArgs,{name:'wkd',index:1,mode:'flags-important'})
+        wkd=wkdInCmd?wkdInCmd:wkd
+        // log(`[file-size] workspace: ${wkdInCmd}`)
+
+        let text :string=''
+      
+
+        // text=loadTextFile(`fonts/iconfont.css`)
+        // // todo: slice @font-face  { xxx }
+        // let cdncss:string=''
+
+        // cdncss=toFontCssCdn({text,cdn:'//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.'})
+        // log(cdncss)
+
+        // cdncss=toFontCssCdn({text,cdn:'//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/fonts/iconfont.'})
+        // log(cdncss)
+
+        // https://juejin.cn/post/6844903758942453768
+        // log(cdncss.match(/@font-face \{(\n|.)*/im))
+
+        let url :string = ''
+        let data =parseGithubUrl('https://github.com/YMC-GitHub/zero-iconfont-hiicon/blob/main/fonts/iconfont.css')
+        log(`[info] jsdelivr & github: `,getCdnJsdelivrUrl(data))
+        // log(`[info] jsdelivr & npm:`)
+        // log(getCdnJsdelivrUrl([...data.slice(0,4),'npm']))
+
+        log(`[info] staticaly & github: `,getCdnJsdelivrUrl(data,'//cdn.staticaly.com'))
+        // log(`[info] staticaly & npm:`)
+        // log(getCdnJsdelivrUrl([...data.slice(0,4),'npm'],'//cdn.staticaly.com'))
+
+    }
+
 }
 runasync(main)
 
 // tsx ./src/cli.ts 0 00 00 
 // tsx ./src/cli.ts file-zise --cmd file-size
 // tsx ./src/cli.ts file-zise ./packages/jcm
+
+// tsx ./src/cli.ts css-cdn
