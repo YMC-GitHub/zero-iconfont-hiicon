@@ -8,6 +8,7 @@ import {getFileSize,toKeyValTree,toMarkdownTable,writeMarkdownFile} from "./file
 import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
 import {touch} from "./touch"
 import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords,editName,editRepo} from "./editjson"
+import {downloadFile} from "./download"
 
 
 
@@ -153,6 +154,28 @@ async function main(){
     // get cmd
     let cmd = cliGetCmd(cliArgs,{name:'cmd',index:0,mode:'flags-important'})
     
+
+    if(valIsOneOfList(cmd,cmdListify('download,down'))){
+        // supoort touch --url xx 
+        let url:string = cliGetCmd(cliArgs,{name:'u,url',index:-1,mode:'flags-important'})
+        // --file 
+        let file:string = cliGetCmd(cliArgs,{name:'f,file',index:-1,mode:'flags-important'})
+        let ghproxy:string = cliGetCmd(cliArgs,{name:'ghproxy',index:-1,mode:'flags-important'},'https://ghproxy.com/')
+
+        // let url: string='https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg'
+        // let ghproxy='https://ghproxy.com/'
+        
+        // url='https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@6.x//svgs/regular/circle.svg'
+        if(ghproxy && url.startsWith(`https://raw.githubusercontent.com`)){
+            url=`${ghproxy}${url}`
+        }
+        // log(url)
+        // 'svg/circle.svg'
+        downloadFile(url,{targetFile:file,overideTargetFile:false})
+
+        // tsx ./src/cli.ts download --url https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg --file svg/circle.svg
+    }
+
     if(valIsOneOfList(cmd,cmdListify('touch,add-txt-file'))){
         // get working dir
         let wkd:string=''
