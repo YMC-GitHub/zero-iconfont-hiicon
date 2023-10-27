@@ -22,15 +22,11 @@
   "license": "MIT",
   "private": false,
   "repository": {
-    "repository": {
-      "type": "git",
-      "url": "git+https://github.com/ymc-github/zero-iconfont-hiicon.git"
-    }
+    "type": "git",
+    "url": "git+https://github.com/ymc-github/zero-iconfont-hiicon.git"
   },
   "bugs": {
-    "bugs": {
-      "url": "https://github.com/ymc-github/zero-iconfont-hiicon/issues"
-    }
+    "url": "https://github.com/ymc-github/zero-iconfont-hiicon/issues"
   },
-  "homepage": "https://github.com/ymc-github/zero-iconfont-hiicon/blob/main/package/noop#readme"
+  "homepage": "https://github.com/ymc-github/zero-iconfont-hiicon#readme"
 }
