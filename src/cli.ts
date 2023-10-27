@@ -139,6 +139,28 @@ function autoEndsWithSep(s:string){
 function getValue(s:any,def:any=''){
     return s?s:def
 }
+
+function makeGithubProxyUrl(url:string,ghproxy:string,sites:string|string[]= `https://raw.githubusercontent.com,https://github.com`){
+    let ghu = ensureArray(sites)
+
+    // https://github.com -> https://ghproxy.com/https://github.com
+    if(ghproxy !==undefined && ghu.some(u=>url.startsWith(u))){
+        url=`${ghproxy}${url}`
+    }
+    return url
+
+    // 'a,b,c' -> ['a','b','c']
+    function arrayify(s:string){
+        return s.split(",").map(v=>v.trim()).filter(v=>v)
+    }
+
+    // 'a,b,c' or ['a','b','c'] -> ['a','b','c']
+    function ensureArray(sites:string|string[]){
+        return Array.isArray(sites)?sites:arrayify(sites)
+    }
+}
+
+
 async function main(){
     log(`[zero] hello, zero!`)
 
@@ -160,15 +182,13 @@ async function main(){
         let url:string = cliGetCmd(cliArgs,{name:'u,url',index:-1,mode:'flags-important'})
         // --file 
         let file:string = cliGetCmd(cliArgs,{name:'f,file',index:-1,mode:'flags-important'})
-        let ghproxy:string = cliGetCmd(cliArgs,{name:'ghproxy',index:-1,mode:'flags-important'},'https://ghproxy.com/')
+        let ghproxy:string = cliGetCmd(cliArgs,{name:'ghproxy',index:-1,mode:'flags-important'},'https://ghproxy.com/');
 
         // let url: string='https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg'
         // let ghproxy='https://ghproxy.com/'
         
         // url='https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@6.x//svgs/regular/circle.svg'
-        if(ghproxy && url.startsWith(`https://raw.githubusercontent.com`)){
-            url=`${ghproxy}${url}`
-        }
+        url = makeGithubProxyUrl(url,ghproxy)
         // log(url)
         // 'svg/circle.svg'
         downloadFile(url,{targetFile:file,overideTargetFile:false})
