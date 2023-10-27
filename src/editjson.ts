@@ -116,7 +116,6 @@ function kwDup(cur:string[]){
 }
 
 // editjson-transform-name
-
 export interface EditNameOption {
     ns:string
     org:string,
@@ -142,7 +141,6 @@ function genPkgName(data:EditNameOptionLike){
 
 
 // editjson-transform-github
-
 export interface EditRepoOption {
     user:string
     repo:string,
@@ -162,17 +160,13 @@ export function editRepo(data:any,opts?:EditRepoOptionLike){
     }
     let text = ['https://github.com',user,repo].join('/')
 
-    data['repository']={
-        "repository": {
-            "type": "git",
-            "url": `git+${text}.git`
-          },
-    }
-    data['bugs']={
-        "bugs": {
-            "url": `${text}/issues`
-          },
-    }
+    data['repository']= {
+        "type": "git",
+        "url": `git+${text}.git`
+      },
+    data['bugs']= {
+        "url": `${text}/issues`
+    },
     data['homepage'] = mono?`${text}/${getMonoHomePageSuffix(option)}#readme`:`${text}#readme`
    
 }
@@ -181,13 +175,8 @@ function getMonoHomePageSuffix(data:EditRepoOptionLike){
     return ['blob',branch,packageLoc,name].join("/")
 }
 
-// "repository": {
-//     "type": "git",
-//     "url": "git+https://github.com/ymc-github/smallts.git"
-//   },
-//   "bugs": {
-//     "url": "https://github.com/ymc-github/smallts/issues"
-//   },
-//   "homepage": "https://github.com/ymc-github/smallts#readme",
-
-//  "homepage": "https://github.com/ymc-github/js-idea/blob/main/packages/extend-string#readme",
+type RootJsonData = Record<string,any>
+// '',
+function initJsonValueKey(key:string,type:string,json:RootJsonData,sep:string=''){
+    // string,number,
+}
