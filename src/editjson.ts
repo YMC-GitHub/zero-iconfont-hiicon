@@ -176,7 +176,96 @@ function getMonoHomePageSuffix(data:EditRepoOptionLike){
 }
 
 type RootJsonData = Record<string,any>
-// '',
-function initJsonValueKey(key:string,type:string,json:RootJsonData,sep:string=''){
-    // string,number,
+
+/**
+ * 
+ * @sample
+ * ```
+ * setJsonValueInNs('a.b.c.d','array',{},'.') //{ a: { b: { c: 'array' } } }
+ * ``` 
+ */
+export function setJsonValueInNs(key:string,value:any,json:RootJsonData,sep:string=''){
+    let {lastns,context} = getJsonContextInNs(key,json,sep)
+    
+    if(value===undefined){
+        // del ns when set it as undefined
+        delete context[lastns] 
+    }else{
+        context[lastns] = value
+    }
+    
+    return json
 }
+
+/**
+ * 
+ * @sample
+ * ```
+ * iniJsonValueInNs('a.b.c.d','array',{},'.') //{ a: { b: { c: [Object] } } }
+ * ``` 
+ */
+export function iniJsonValueInNs(key:string,type:string,json:RootJsonData,sep:string=''){
+    let {lastns,context} = getJsonContextInNs(key,json,sep)
+    let noop = ()=>{}
+
+    // no need initing when exist in it
+    if(lastns in context){
+        // do nothing
+        noop()
+    }else{
+        context[lastns] = iniValueByType(type)
+    }
+    return json
+}
+
+export function iniValueByType(type:string){
+    let res:any
+    switch (type.trim().toLowerCase()) {
+        case 'hash':
+            res = {}
+            break;
+        case 'array':
+            res = []
+            break;
+        case 'bool':
+            res = false
+                break;
+        case 'number':
+            res = 0
+            break;
+        case 'string':
+        default:
+            res = ''
+            break;
+    }
+    return res
+}
+// '{},[],false,0,""'.split(",").map(v=>JSON.parse(v)).map(v=>console.log(v))
+
+
+export function getJsonContextInNs(key:string,json:RootJsonData,sep:string=''){
+    let ns = sep?key.split(sep):[key]
+    let lastns = ns[ns.length-1];
+    let ctx:any=json;
+    if(ns.length>1) {
+        for (let index = 0; index < ns.length-1; index++) {
+            const ki = ns[index];
+            let ctxi = ctx[ki]
+    
+            // update context ctx    
+           if(ctxi){
+                ctx=ctxi
+           }else{
+            ctx[ki]={};ctx=ctx[ki]
+           }
+            // ctx=ctxi?ctxi:(ctx[ki]={})
+        }
+    }
+    return {context:ctx,lastns}
+}
+
+// console.log(iniJsonValueInNs('a.b.c.d','array',{},'.'))
+// let json = iniJsonValueInNs('a.b.c.d','number',{},'.')
+// console.log(json,JSON.stringify(json,null,0),setJsonValueInNs('a.b.c.d',undefined,json,'.'))
+
+// tsx src/editjson.ts
