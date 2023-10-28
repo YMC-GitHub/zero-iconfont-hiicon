@@ -9,6 +9,7 @@ import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
 import {touch} from "./touch"
 import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords,editName,editRepo,getJsonContextInNs,setJsonValueInNs} from "./editjson"
 import {downloadFile} from "./download"
+import {rm,mv,cp} from "./rm"
 
 
 
@@ -158,6 +159,30 @@ function makeGithubProxyUrl(url:string,ghproxy:string,sites:string|string[]= `ht
     function ensureArray(sites:string|string[]){
         return Array.isArray(sites)?sites:arrayify(sites)
     }
+}
+
+/**
+ * 
+ * @sample
+ * ```
+ * // './a/b/c/' -> './a/b/c'
+ * noEndSlash(`./a/b/c/`)
+ * ```
+ */
+function noEndSlash(s:string){
+    return s.replace(/\/+$/,'')
+}
+
+/**
+ * 
+ * @sample
+ * ```
+ * // './a/b/c' -> './a/b/c/'
+ * noEndSlash(`./a/b/c/`)
+ * ```
+ */
+function endSlash(s:string){
+    return s.replace(/\/+$/,'/')
 }
 
 
@@ -365,14 +390,30 @@ async function main(){
     }
 
 
+    if(valIsOneOfList(cmd,cmdListify('cp,copy'))){
+        // support: cp src des,cp --src src --des des,cp -s src -d des
+        let src = cliGetCmd(cliArgs,{name:'-s,--src',index:1,mode:'flags-important'},'')
+        // supoort cmd --des xx  or cmd src des
+        let des = cliGetCmd(cliArgs,{name:'-d,--des',index:2,mode:'flags-important'},'')
+       
+        cp(src,des)
+    }
+    if(valIsOneOfList(cmd,cmdListify('rm,remove,del'))){
+        // support: cp src des,cp --src src --des des,cp -s src -d des
+        let src = cliGetCmd(cliArgs,{name:'-s,--loc',index:1,mode:'flags-important'},'')
+       
+        rm(src)
+    }
+
     if(valIsOneOfList(cmd,cmdListify('file-size,2'))){
         // file-zise ./packages/jcm
         log(`[file-size] get file size`)
 
         let wkd = './'
-        let wkdInCmd = cliGetCmd(cliArgs,{name:'wkd',index:1,mode:'flags-important'})
+        let wkdInCmd = cliGetCmd(cliArgs,{name:'-w,--wkd',index:1,mode:'flags-important'})
         wkd=wkdInCmd?wkdInCmd:wkd
         // log(`[file-size] workspace: ${wkdInCmd}`)
+        let stdWkd = noEndSlash(wkd)
 
         log(`[file-size] workspace: ${wkd}`)
 
@@ -385,9 +426,12 @@ async function main(){
         rule=getValue(rule,'.js$')
         
         let files = getFileList(inDirs,{wkd:wkd,macthRules:[new RegExp(rule)]})
-        log(files)
+        // log(files)
 
-        log(`[file-size] size of file list`)
+        log(files.map(file=>{return {...file,name:file.name.replace(new RegExp(`^${stdWkd}/`),'')}}))
+
+
+        log(`[file-size] size of file list: \n`)
         let fsdList = files.map(file=>{
             // let 
             let fsd = getFileSize(file.name)
@@ -396,12 +440,18 @@ async function main(){
         })
         // log(fsdList)
 
+        // relative to wkd (to show in result)
+
+        fsdList.forEach(fsd=>{
+            fsd[0]=fsd[0].replace(new RegExp(`^${stdWkd}/`),'')
+        })
+        log(fsdList)
         // let fsdkvList = fsdList.map(fsd=>toKeyValTree(fsd))
         // log(`[file-size] to key value tree:`)
         // log(fsdkvList)
 
         let markdownTable = toMarkdownTable(fsdList)
-        // log(`[file-size] markdown table of file size: \n`)
+        log(`[file-size] markdown table of file size: \n`)
         log(markdownTable)
         // log(`[file-size] write to markdown file: \n`)
         writeMarkdownFile({text:markdownTable,wkd:ensureEndsWith(wkd,'/')})
