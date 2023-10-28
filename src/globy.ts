@@ -33,6 +33,11 @@ export function globy(exp:string,data?:string[]){
 
     list=list.filter(name=>reg.test(name))
     // log(list)
+
+    // ensure not starts with './'
+    // './a/' or 'a/' -> 'a/'
+    let stdedDir = dir.replace(/^\.\//,'')
+    
     list=list.map(v=>`${dir}/${v}`)
     
     return list

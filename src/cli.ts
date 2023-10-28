@@ -7,7 +7,7 @@ import {getFileSize,toKeyValTree,toMarkdownTable,writeMarkdownFile} from "./file
 
 import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
 import {touch} from "./touch"
-import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords,editName,editRepo} from "./editjson"
+import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords,editName,editRepo,getJsonContextInNs,setJsonValueInNs} from "./editjson"
 import {downloadFile} from "./download"
 
 
@@ -225,7 +225,9 @@ async function main(){
         log(`[${cmd}] read ${location}`)
         let data = readJsonFileSync(location)
         log(`[${cmd}] list json keys : ${Object.keys(data)}`)
-        data=sortJsonByKeys(data,`name,version,description,author,license,bugs,homepage,devDependencies`)
+
+        let order = cliGetCmd(cliArgs,{name:'order',index:-1,mode:'flags-important'},`name,version,description,main,types,scripts,repository,keywords,author,license,bugs,homepage,dependencies,devDependencies`)
+        data=sortJsonByKeys(data,order)
         // name,version,description,main,devDependencies,scripts,repository,keywords,author,license,bugs,homepage
         writeJsonFileSync(location,data)
         //
@@ -330,6 +332,35 @@ async function main(){
         let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'')
         log([packageLoc])
         editRepo(data,{user,repo,mono:mono?true:false,name,packageLoc,branch})
+        writeJsonFileSync(location,data)
+    }
+
+
+    if(valIsOneOfList(cmd,cmdListify('edit-script'))){
+        // get working dir
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        log(`[${cmd}] workspace: ${ws}`)
+
+        // supoort sortjsonkey --file xx 
+        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+
+        let location:string = join(ws,file)
+        // todo:join -- join,abs,rel-to-rcd,like-slash
+        log(`[${cmd}] read ${location}`)
+        let data = readJsonFileSync(location)
+
+        // supoort sortjsonkey --ns keywords
+        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'private')
+        let value = cliGetValue(cliArgs,{name:'-v,--value',index:-1,mode:'flags-important'})
+        let ns = cliGetCmd(cliArgs,{name:'--ns',index:-1,mode:'flags-important'},'scripts')
+        let nsSep = cliGetCmd(cliArgs,{name:'--ns-sep',index:-1,mode:'flags-important'},'.')
+
+
+        // let {context} = getJsonContextInNs(`${ns}${nsSep}${name}`,data,nsSep)
+        // context[name]=value
+        log([name,value])
+        data=setJsonValueInNs(`${ns}${nsSep}${name}`,value,data,nsSep)
         writeJsonFileSync(location,data)
     }
 
