@@ -1,4 +1,4 @@
-import iconv from "iconv-lite";
+// import iconv from "iconv-lite";
 // import type {Options as iconvOptions} from "iconv-lite";
 import { exec } from 'child_process'
 
@@ -241,7 +241,7 @@ export function exitWhenErr(execOpts:ExecOption,switcher:boolean=true){
 }
 
 async function demo(){
-    setExecOptsForIconv(iconv,execOpts)
+    // setExecOptsForIconv(iconv,execOpts)
     let res = await execWraper(`dir`,execOpts)
     console.log(res)
 }
