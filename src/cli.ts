@@ -10,6 +10,8 @@ import {touch} from "./touch"
 import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords,editName,editRepo,getJsonContextInNs,setJsonValueInNs} from "./editjson"
 import {downloadFile} from "./download"
 import {rm,mv,cp} from "./rm"
+import {gitcmtmsgJsonify} from "./git"
+
 
 
 
@@ -404,7 +406,16 @@ async function main(){
        
         rm(src)
     }
+    if(valIsOneOfList(cmd,cmdListify('gcmh-to-json,git-cmt-msg-history-to-json'))){
+        // support: cp src des,cp --src src --des des,cp -s src -d des
+        let src = cliGetCmd(cliArgs,{name:'--file',index:-1,mode:'flags-important'},'')
+        let count = Number(cliGetValue(cliArgs,{name:'-n,--count',index:-1,mode:'flags-important'},10))
+        let countall = Boolean(cliGetValue(cliArgs,{name:'--count-all',index:-1,mode:'flags-important'}))
 
+        gitcmtmsgJsonify(src,count,countall)
+    }
+
+    
     if(valIsOneOfList(cmd,cmdListify('file-size,2'))){
         // file-zise ./packages/jcm
         log(`[file-size] get file size`)
