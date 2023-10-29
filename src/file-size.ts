@@ -83,8 +83,11 @@ export function toMarkdownTable(fileSizeDataList:string[][]){
 // write markdownTable to lib-size.tmp.md'
 export function writeTempfile( text:string,wkd = './',name='lib-size.tmp.md') {
     if (!text) return
+    // ensure not ends with '/'
+    let des = wkd.replace(/\/*$/,'')
     const file = {
-        name: join(wkd,name),
+        // join(wkd,name) => `${des}/${name}`
+        name: `${des}/${name}`,
         data: text
     }
     // log(`[info] temp file: ${file.name}`)
