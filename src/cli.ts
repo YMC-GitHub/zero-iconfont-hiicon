@@ -1,106 +1,106 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs'
 import parse from "./nano-args"
-import type {NanoArgsData} from "./nano-args"
+import type { NanoArgsData } from "./nano-args"
 
 import { getFileList } from './file-list'
-import {getFileSize,toKeyValTree,toMarkdownTable,writeMarkdownFile} from "./file-size"
+import { getFileSize, toKeyValTree, toMarkdownTable, writeMarkdownFile } from "./file-size"
 
-import {loadTextFile,toFontCssCdn,parseGithubUrl,getCdnJsdelivrUrl} from "./cdn"
-import {touch} from "./touch"
-import {readJsonFileSync,writeJsonFileSync,sortJsonByKeys,editKeywords,editName,editRepo,getJsonContextInNs,setJsonValueInNs} from "./editjson"
-import {downloadFile} from "./download"
-import {rm,mv,cp} from "./rm"
-import {gitcmtmsgJsonify} from "./git"
-
-
+import { loadTextFile, toFontCssCdn, parseGithubUrl, getCdnJsdelivrUrl } from "./cdn"
+import { touch } from "./touch"
+import { readJsonFileSync, writeJsonFileSync, sortJsonByKeys, editKeywords, editName, editRepo, getJsonContextInNs, setJsonValueInNs } from "./editjson"
+import { downloadFile } from "./download"
+import { rm, mv, cp } from "./rm"
+import { gitcmtmsgJsonify } from "./commitlog"
 
 
-const {log}=console
-function doNothing(){
+
+
+const { log } = console
+function doNothing() {
 
 }
-function runasync(main:Function){
+function runasync(main: Function) {
     return main().then(doNothing).catch(doNothing)
 }
 
-function valIsOneOfList(val: any, list:any[]) {
+function valIsOneOfList(val: any, list: any[]) {
     return list.includes(val)
 }
 
-function cmdListify(cmd:string){
-    return cmd.split(",").map(v=>v.trim()).filter(v=>v)
+function cmdListify(cmd: string) {
+    return cmd.split(",").map(v => v.trim()).filter(v => v)
 }
 // mock path.join
-function join(...pathLike:string[]){
-    return pathLike.join('/').replace(/\/{2,}/,'/')
+function join(...pathLike: string[]) {
+    return pathLike.join('/').replace(/\/{2,}/, '/')
 }
 
 
 interface CliGetCmdOption {
-    name:string,
-    mode:'flags-important'|'_-important',
+    name: string,
+    mode: 'flags-important' | '_-important',
     // cmd in the _ index
-    index:number
+    index: number
 }
 type CliGetCmdOptionLike = Partial<CliGetCmdOption>
 
-function cliGetCmd(data:NanoArgsData,opts?:CliGetCmdOptionLike,def:string=''){
-    let cmd = cliGetValue(data,opts)
-    let res:string=''
+function cliGetCmd(data: NanoArgsData, opts?: CliGetCmdOptionLike, def: string = '') {
+    let cmd = cliGetValue(data, opts)
+    let res: string = ''
     // ensure string and avoid undefined
-    res= cmd!==undefined?cmd.toString():''
+    res = cmd !== undefined ? cmd.toString() : ''
     // use the default value 
-    res= res?res:def
+    res = res ? res : def
     return res
 }
 
 // -w,--workspace -> [s,l]
-function cliGetPureName(name:string){
+function cliGetPureName(name: string) {
     let [sl] = name.trim().split(" ")
-    let [s,l] = sl.split(",").map(v=>v.trim().replace(/^-+/,'')).filter(v=>v)
-    return [s,l].join(",")
+    let [s, l] = sl.split(",").map(v => v.trim().replace(/^-+/, '')).filter(v => v)
+    return [s, l].join(",")
 }
 
 // cliGetValueByName({flags:{w:true}},'-w') -> true
 // cliGetValueByName({flags:{w:true}},'-w,--workspace') -> true
-function cliGetValueByName(data:NanoArgsData,name:string){
+function cliGetValueByName(data: NanoArgsData, name: string) {
     let pname = cliGetPureName(name).split(",")
-    let  {flags,_,extras} =data
+    let { flags, _, extras } = data
     let res
     for (let index = 0; index < pname.length; index++) {
         const pni = pname[index];
-        if(pni in flags){
-            res=flags[pni]
+        if (pni in flags) {
+            res = flags[pni]
             break;
         }
     }
-   return res
+    return res
 }
 
-function cliGetValue(data:NanoArgsData,opts?:CliGetCmdOptionLike,def?:any){
+function cliGetValue(data: NanoArgsData, opts?: CliGetCmdOptionLike, def?: any) {
 
-    let buitinOption:CliGetCmdOption = {name:'cmd',mode:'flags-important',index:0}
-    let option =opts? {...buitinOption,...opts}:buitinOption
+    let buitinOption: CliGetCmdOption = { name: 'cmd', mode: 'flags-important', index: 0 }
+    let option = opts ? { ...buitinOption, ...opts } : buitinOption
 
-    let res:string =''
+    let res: string = ''
 
-    let  {flags,_,extras} =data
+    let { flags, _, extras } = data
     // use the first value in _ as cmd 
     // 'ns file-size' -> 'file-size'
     // let [cmd] = _
     // use the index value in _ as cmd ,when index is < 0, means that not use index
-    let cmd =option.index<0?undefined: _[option.index]
+    let cmd = option.index < 0 ? undefined : _[option.index]
 
     // use the cmd in flags 
     // 'ns --cmd file-size' -> 'file-size'
-    let cmdInOption = cliGetValueByName(data,option.name)
+    let cmdInOption = cliGetValueByName(data, option.name)
 
     // use cmd in _ or use cmd in flags ?
-    if(option.mode ==='_-important'){
-        cmd = (cmd!=undefined && cmdInOption)?cmdInOption : cmd; //cmd in _  important!
+    if (option.mode === '_-important') {
+        cmd = (cmd != undefined && cmdInOption) ? cmdInOption : cmd; //cmd in _  important!
     }
-    if(option.mode ==='flags-important'){
-        cmd = cmdInOption!=undefined?cmdInOption : cmd; //cmd in flags important!
+    if (option.mode === 'flags-important') {
+        cmd = cmdInOption != undefined ? cmdInOption : cmd; //cmd in flags important!
     }
 
     // ensure string and avoid undefined
@@ -108,58 +108,58 @@ function cliGetValue(data:NanoArgsData,opts?:CliGetCmdOptionLike,def?:any){
     // use the default value 
     // res= res?res:def
 
-    cmd = cmd !=undefined?cmd:def
+    cmd = cmd != undefined ? cmd : def
     return cmd
 }
 
 
-function decodeJSON(a:any){
-    return JSON.stringify(a,null,0)
+function decodeJSON(a: any) {
+    return JSON.stringify(a, null, 0)
 }
 
-function delstrPrefix(str:string, flag:boolean, prefix:string) {
+function delstrPrefix(str: string, flag: boolean, prefix: string) {
     str = flag ? str.replace(new RegExp(`^${prefix}`, 'ig'), '') : str
     return str
 }
 
 // 'ab' -> 'an/'
-function  ensureEndsWith(s:string,sep:string='/'){
-    return s.endsWith(sep)?s:`${s}${sep}`
+function ensureEndsWith(s: string, sep: string = '/') {
+    return s.endsWith(sep) ? s : `${s}${sep}`
 }
 
 // '/a/b' -> '/a/b/' or '\\a\\b' -> '\\a\\b\\'
-function autoEndsWithSep(s:string){
-    let backSlash='\\'
+function autoEndsWithSep(s: string) {
+    let backSlash = '\\'
     let backSlashInS = s.indexOf(backSlash)
-    
+
     // back slash first
-    if(backSlashInS>=0){
-        ensureEndsWith(s,backSlash)
-    }else{
-        ensureEndsWith(s,'/')
+    if (backSlashInS >= 0) {
+        ensureEndsWith(s, backSlash)
+    } else {
+        ensureEndsWith(s, '/')
     }
 }
-function getValue(s:any,def:any=''){
-    return s?s:def
+function getValue(s: any, def: any = '') {
+    return s ? s : def
 }
 
-function makeGithubProxyUrl(url:string,ghproxy:string,sites:string|string[]= `https://raw.githubusercontent.com,https://github.com`){
+function makeGithubProxyUrl(url: string, ghproxy: string, sites: string | string[] = `https://raw.githubusercontent.com,https://github.com`) {
     let ghu = ensureArray(sites)
 
     // https://github.com -> https://ghproxy.com/https://github.com
-    if(ghproxy !==undefined && ghu.some(u=>url.startsWith(u))){
-        url=`${ghproxy}${url}`
+    if (ghproxy !== undefined && ghu.some(u => url.startsWith(u))) {
+        url = `${ghproxy}${url}`
     }
     return url
 
     // 'a,b,c' -> ['a','b','c']
-    function arrayify(s:string){
-        return s.split(",").map(v=>v.trim()).filter(v=>v)
+    function arrayify(s: string) {
+        return s.split(",").map(v => v.trim()).filter(v => v)
     }
 
     // 'a,b,c' or ['a','b','c'] -> ['a','b','c']
-    function ensureArray(sites:string|string[]){
-        return Array.isArray(sites)?sites:arrayify(sites)
+    function ensureArray(sites: string | string[]) {
+        return Array.isArray(sites) ? sites : arrayify(sites)
     }
 }
 
@@ -171,8 +171,8 @@ function makeGithubProxyUrl(url:string,ghproxy:string,sites:string|string[]= `ht
  * noEndSlash(`./a/b/c/`)
  * ```
  */
-function noEndSlash(s:string){
-    return s.replace(/\/+$/,'')
+function noEndSlash(s: string) {
+    return s.replace(/\/+$/, '')
 }
 
 /**
@@ -183,246 +183,246 @@ function noEndSlash(s:string){
  * noEndSlash(`./a/b/c/`)
  * ```
  */
-function endSlash(s:string){
-    return s.replace(/\/+$/,'/')
+function endSlash(s: string) {
+    return s.replace(/\/+$/, '/')
 }
 
 
-async function main(){
+async function main() {
     log(`[zero] hello, zero!`)
 
 
     // log(`[debug] nano  parse:`)
     let input = process.argv.slice(2);
-    log(`[info] cli input`,decodeJSON(input));
+    log(`[info] cli input`, decodeJSON(input));
     let cliArgs = parse(input);
     // let {flags,_,extras} =cliArgs;log(flags,_,extras);
 
-    log(`[info] nano parse result`,decodeJSON(cliArgs))
+    log(`[info] nano parse result`, decodeJSON(cliArgs))
 
     // get cmd
-    let cmd = cliGetCmd(cliArgs,{name:'cmd',index:0,mode:'flags-important'})
-    
+    let cmd = cliGetCmd(cliArgs, { name: 'cmd', index: 0, mode: 'flags-important' })
 
-    if(valIsOneOfList(cmd,cmdListify('download,down'))){
+
+    if (valIsOneOfList(cmd, cmdListify('download,down'))) {
         // supoort touch --url xx 
-        let url:string = cliGetCmd(cliArgs,{name:'u,url',index:-1,mode:'flags-important'})
+        let url: string = cliGetCmd(cliArgs, { name: 'u,url', index: -1, mode: 'flags-important' })
         // --file 
-        let file:string = cliGetCmd(cliArgs,{name:'f,file',index:-1,mode:'flags-important'})
-        let ghproxy:string = cliGetCmd(cliArgs,{name:'ghproxy',index:-1,mode:'flags-important'},'https://ghproxy.com/');
+        let file: string = cliGetCmd(cliArgs, { name: 'f,file', index: -1, mode: 'flags-important' })
+        let ghproxy: string = cliGetCmd(cliArgs, { name: 'ghproxy', index: -1, mode: 'flags-important' }, 'https://ghproxy.com/');
 
         // let url: string='https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg'
         // let ghproxy='https://ghproxy.com/'
-        
+
         // url='https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@6.x//svgs/regular/circle.svg'
-        url = makeGithubProxyUrl(url,ghproxy)
+        url = makeGithubProxyUrl(url, ghproxy)
         // log(url)
         // 'svg/circle.svg'
-        downloadFile(url,{targetFile:file,overideTargetFile:false})
+        downloadFile(url, { targetFile: file, overideTargetFile: false })
 
         // tsx ./src/cli.ts download --url https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg --file svg/circle.svg
     }
 
-    if(valIsOneOfList(cmd,cmdListify('touch,add-txt-file'))){
+    if (valIsOneOfList(cmd, cmdListify('touch,add-txt-file'))) {
         // get working dir
-        let wkd:string=''
+        let wkd: string = ''
         // - supoort touch --wkd xx 
-        let wkdInCmd = cliGetCmd(cliArgs,{name:'wkd',index:-1,mode:'flags-important'})
-        wkd=getValue(wkdInCmd,'./')
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: -1, mode: 'flags-important' })
+        wkd = getValue(wkdInCmd, './')
         log(`[${cmd}] workspace: ${wkd}`)
 
         // supoort touch --file xx and compact with touch xx
-        let file = cliGetCmd(cliArgs,{name:'file',index:1,mode:'flags-important'})
-        file=getValue(file,'')
+        let file = cliGetCmd(cliArgs, { name: 'file', index: 1, mode: 'flags-important' })
+        file = getValue(file, '')
         log(`[${cmd}] touch ${file}`)
         touch(file)
     }
 
-    if(valIsOneOfList(cmd,cmdListify('sortjsonkey,sjkey'))){
+    if (valIsOneOfList(cmd, cmdListify('sortjsonkey,sjkey'))) {
         // get working dir
         // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
-        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
         log(`[${cmd}] workspace: ${ws}`)
 
         // supoort sortjsonkey --file xx and compact with sortjsonkey xx
-        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
 
-        let location:string = join(ws,file)
+        let location: string = join(ws, file)
 
         log(`[${cmd}] read ${location}`)
         let data = readJsonFileSync(location)
         log(`[${cmd}] list json keys : ${Object.keys(data)}`)
 
-        let order = cliGetCmd(cliArgs,{name:'order',index:-1,mode:'flags-important'},`name,version,description,main,types,scripts,repository,keywords,author,license,bugs,homepage,dependencies,devDependencies`)
-        data=sortJsonByKeys(data,order)
+        let order = cliGetCmd(cliArgs, { name: 'order', index: -1, mode: 'flags-important' }, `name,version,description,main,types,scripts,repository,keywords,author,license,bugs,homepage,dependencies,devDependencies`)
+        data = sortJsonByKeys(data, order)
         // name,version,description,main,devDependencies,scripts,repository,keywords,author,license,bugs,homepage
-        writeJsonFileSync(location,data)
+        writeJsonFileSync(location, data)
         //
     }
 
-    if(valIsOneOfList(cmd,cmdListify('edit-keywords'))){
+    if (valIsOneOfList(cmd, cmdListify('edit-keywords'))) {
         // get working dir
         // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
-        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
         log(`[${cmd}] workspace: ${ws}`)
 
         // supoort sortjsonkey --file xx 
-        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
 
-        let location:string = join(ws,file)
+        let location: string = join(ws, file)
         // todo:join -- join,abs,rel-to-rcd,like-slash
         log(`[${cmd}] read ${location}`)
         let data = readJsonFileSync(location)
 
         // supoort sortjsonkey --include a,d
-        let include = cliGetCmd(cliArgs,{name:'include',index:-1,mode:'flags-important'},'')
+        let include = cliGetCmd(cliArgs, { name: 'include', index: -1, mode: 'flags-important' }, '')
         // supoort sortjsonkey --exclude a,b,c,d
-        let exclude = cliGetCmd(cliArgs,{name:'exclude',index:-1,mode:'flags-important'},'')
+        let exclude = cliGetCmd(cliArgs, { name: 'exclude', index: -1, mode: 'flags-important' }, '')
         // supoort sortjsonkey --sep ,
-        let sep = cliGetCmd(cliArgs,{name:'sep',index:-1,mode:'flags-important'},',')
+        let sep = cliGetCmd(cliArgs, { name: 'sep', index: -1, mode: 'flags-important' }, ',')
         // supoort sortjsonkey --ns keywords
-        let ns = cliGetCmd(cliArgs,{name:'ns',index:-1,mode:'flags-important'},'keywords')
+        let ns = cliGetCmd(cliArgs, { name: 'ns', index: -1, mode: 'flags-important' }, 'keywords')
 
-        editKeywords(data,{include,exclude,sep,ns})
-        writeJsonFileSync(location,data)
+        editKeywords(data, { include, exclude, sep, ns })
+        writeJsonFileSync(location, data)
     }
 
-    if(valIsOneOfList(cmd,cmdListify('edit-name'))){
+    if (valIsOneOfList(cmd, cmdListify('edit-name'))) {
         // get working dir
         // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
-        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
         log(`[${cmd}] workspace: ${ws}`)
 
         // supoort sortjsonkey --file xx 
-        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
 
-        let location:string = join(ws,file)
+        let location: string = join(ws, file)
         // todo:join -- join,abs,rel-to-rcd,like-slash
         log(`[${cmd}] read ${location}`)
         let data = readJsonFileSync(location)
 
         // supoort sortjsonkey --ns keywords
-        let ns = cliGetCmd(cliArgs,{name:'--ns',index:-1,mode:'flags-important'},'name')
-        let org = cliGetCmd(cliArgs,{name:'-o,--org',index:-1,mode:'flags-important'},'')
-        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'')
-        editName(data,{ns,name,org})
-        writeJsonFileSync(location,data)
+        let ns = cliGetCmd(cliArgs, { name: '--ns', index: -1, mode: 'flags-important' }, 'name')
+        let org = cliGetCmd(cliArgs, { name: '-o,--org', index: -1, mode: 'flags-important' }, '')
+        let name = cliGetCmd(cliArgs, { name: '-n,--name', index: -1, mode: 'flags-important' }, '')
+        editName(data, { ns, name, org })
+        writeJsonFileSync(location, data)
     }
 
 
-    if(valIsOneOfList(cmd,cmdListify('edit-bool'))){
+    if (valIsOneOfList(cmd, cmdListify('edit-bool'))) {
         // get working dir
         // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
-        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
         log(`[${cmd}] workspace: ${ws}`)
 
         // supoort sortjsonkey --file xx 
-        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
 
-        let location:string = join(ws,file)
+        let location: string = join(ws, file)
         // todo:join -- join,abs,rel-to-rcd,like-slash
         log(`[${cmd}] read ${location}`)
         let data = readJsonFileSync(location)
 
         // supoort sortjsonkey --ns keywords
-        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'private')
-        let value = cliGetValue(cliArgs,{name:'-v,--value',index:-1,mode:'flags-important'})
+        let name = cliGetCmd(cliArgs, { name: '-n,--name', index: -1, mode: 'flags-important' }, 'private')
+        let value = cliGetValue(cliArgs, { name: '-v,--value', index: -1, mode: 'flags-important' })
 
-        log([name,value])
-        if(value !==undefined){
-            data[name]=value
+        log([name, value])
+        if (value !== undefined) {
+            data[name] = value
         }
-        writeJsonFileSync(location,data)
+        writeJsonFileSync(location, data)
     }
 
     // editRepo
-    if(valIsOneOfList(cmd,cmdListify('edit-repo'))){
+    if (valIsOneOfList(cmd, cmdListify('edit-repo'))) {
         // get working dir
         // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
-        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
         log(`[${cmd}] workspace: ${ws}`)
 
         // supoort sortjsonkey --file xx 
-        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
 
-        let location:string = join(ws,file)
+        let location: string = join(ws, file)
         // todo:join -- join,abs,rel-to-rcd,like-slash
         log(`[${cmd}] read ${location}`)
         let data = readJsonFileSync(location)
 
         // supoort sortjsonkey --ns keywords
-        let user = cliGetCmd(cliArgs,{name:'-u,--user',index:-1,mode:'flags-important'},'ymc-github')
-        let repo = cliGetCmd(cliArgs,{name:'-r,--repo',index:-1,mode:'flags-important'},'noop')
-        let mono = cliGetValue(cliArgs,{name:'-m,--mono',index:-1,mode:'flags-important'})
-        let packageLoc = cliGetCmd(cliArgs,{name:'-l,--packageLoc',index:-1,mode:'flags-important'})
-        let branch = cliGetCmd(cliArgs,{name:'-b,--branch',index:-1,mode:'flags-important'})
-        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'')
+        let user = cliGetCmd(cliArgs, { name: '-u,--user', index: -1, mode: 'flags-important' }, 'ymc-github')
+        let repo = cliGetCmd(cliArgs, { name: '-r,--repo', index: -1, mode: 'flags-important' }, 'noop')
+        let mono = cliGetValue(cliArgs, { name: '-m,--mono', index: -1, mode: 'flags-important' })
+        let packageLoc = cliGetCmd(cliArgs, { name: '-l,--packageLoc', index: -1, mode: 'flags-important' })
+        let branch = cliGetCmd(cliArgs, { name: '-b,--branch', index: -1, mode: 'flags-important' })
+        let name = cliGetCmd(cliArgs, { name: '-n,--name', index: -1, mode: 'flags-important' }, '')
         log([packageLoc])
-        editRepo(data,{user,repo,mono:mono?true:false,name,packageLoc,branch})
-        writeJsonFileSync(location,data)
+        editRepo(data, { user, repo, mono: mono ? true : false, name, packageLoc, branch })
+        writeJsonFileSync(location, data)
     }
 
 
-    if(valIsOneOfList(cmd,cmdListify('edit-script'))){
+    if (valIsOneOfList(cmd, cmdListify('edit-script'))) {
         // get working dir
         // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
-        let ws = cliGetCmd(cliArgs,{name:'w,workspace',index:1,mode:'flags-important'},'./')
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
         log(`[${cmd}] workspace: ${ws}`)
 
         // supoort sortjsonkey --file xx 
-        let file = cliGetCmd(cliArgs,{name:'file',index:-1,mode:'flags-important'},'package.json')
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
 
-        let location:string = join(ws,file)
+        let location: string = join(ws, file)
         // todo:join -- join,abs,rel-to-rcd,like-slash
         log(`[${cmd}] read ${location}`)
         let data = readJsonFileSync(location)
 
         // supoort sortjsonkey --ns keywords
-        let name = cliGetCmd(cliArgs,{name:'-n,--name',index:-1,mode:'flags-important'},'private')
-        let value = cliGetValue(cliArgs,{name:'-v,--value',index:-1,mode:'flags-important'})
-        let ns = cliGetCmd(cliArgs,{name:'--ns',index:-1,mode:'flags-important'},'scripts')
-        let nsSep = cliGetCmd(cliArgs,{name:'--ns-sep',index:-1,mode:'flags-important'},'.')
+        let name = cliGetCmd(cliArgs, { name: '-n,--name', index: -1, mode: 'flags-important' }, 'private')
+        let value = cliGetValue(cliArgs, { name: '-v,--value', index: -1, mode: 'flags-important' })
+        let ns = cliGetCmd(cliArgs, { name: '--ns', index: -1, mode: 'flags-important' }, 'scripts')
+        let nsSep = cliGetCmd(cliArgs, { name: '--ns-sep', index: -1, mode: 'flags-important' }, '.')
 
 
         // let {context} = getJsonContextInNs(`${ns}${nsSep}${name}`,data,nsSep)
         // context[name]=value
-        log([name,value])
-        data=setJsonValueInNs(`${ns}${nsSep}${name}`,value,data,nsSep)
-        writeJsonFileSync(location,data)
+        log([name, value])
+        data = setJsonValueInNs(`${ns}${nsSep}${name}`, value, data, nsSep)
+        writeJsonFileSync(location, data)
     }
 
 
-    if(valIsOneOfList(cmd,cmdListify('cp,copy'))){
+    if (valIsOneOfList(cmd, cmdListify('cp,copy'))) {
         // support: cp src des,cp --src src --des des,cp -s src -d des
-        let src = cliGetCmd(cliArgs,{name:'-s,--src',index:1,mode:'flags-important'},'')
+        let src = cliGetCmd(cliArgs, { name: '-s,--src', index: 1, mode: 'flags-important' }, '')
         // supoort cmd --des xx  or cmd src des
-        let des = cliGetCmd(cliArgs,{name:'-d,--des',index:2,mode:'flags-important'},'')
-       
-        cp(src,des)
+        let des = cliGetCmd(cliArgs, { name: '-d,--des', index: 2, mode: 'flags-important' }, '')
+
+        cp(src, des)
     }
-    if(valIsOneOfList(cmd,cmdListify('rm,remove,del'))){
+    if (valIsOneOfList(cmd, cmdListify('rm,remove,del'))) {
         // support: cp src des,cp --src src --des des,cp -s src -d des
-        let src = cliGetCmd(cliArgs,{name:'-s,--loc',index:1,mode:'flags-important'},'')
-       
+        let src = cliGetCmd(cliArgs, { name: '-s,--loc', index: 1, mode: 'flags-important' }, '')
+
         rm(src)
     }
-    if(valIsOneOfList(cmd,cmdListify('gcmh-to-json,git-cmt-msg-history-to-json'))){
+    if (valIsOneOfList(cmd, cmdListify('gcmh-to-json,git-cmt-msg-history-to-json'))) {
         // support: cp src des,cp --src src --des des,cp -s src -d des
-        let src = cliGetCmd(cliArgs,{name:'--file',index:-1,mode:'flags-important'},'')
-        let count = Number(cliGetValue(cliArgs,{name:'-n,--count',index:-1,mode:'flags-important'},10))
-        let countall = Boolean(cliGetValue(cliArgs,{name:'--count-all',index:-1,mode:'flags-important'}))
+        let src = cliGetCmd(cliArgs, { name: '--file', index: -1, mode: 'flags-important' }, '')
+        let count = Number(cliGetValue(cliArgs, { name: '-n,--count', index: -1, mode: 'flags-important' }, 10))
+        let countall = Boolean(cliGetValue(cliArgs, { name: '--count-all', index: -1, mode: 'flags-important' }))
 
-        gitcmtmsgJsonify(src,count,countall)
+        gitcmtmsgJsonify(src, count, countall)
     }
 
-    
-    if(valIsOneOfList(cmd,cmdListify('file-size,2'))){
+
+    if (valIsOneOfList(cmd, cmdListify('file-size,2'))) {
         // file-zise ./packages/jcm
         log(`[file-size] get file size`)
 
         let wkd = './'
-        let wkdInCmd = cliGetCmd(cliArgs,{name:'-w,--wkd',index:1,mode:'flags-important'})
-        wkd=wkdInCmd?wkdInCmd:wkd
+        let wkdInCmd = cliGetCmd(cliArgs, { name: '-w,--wkd', index: 1, mode: 'flags-important' })
+        wkd = wkdInCmd ? wkdInCmd : wkd
         // log(`[file-size] workspace: ${wkdInCmd}`)
         let stdWkd = noEndSlash(wkd)
 
@@ -430,20 +430,20 @@ async function main(){
 
         // log(`[file-size] file list`)
         // --dirs lib
-        let inDirs = cliGetCmd(cliArgs,{name:'dirs',index:1,mode:'flags-important'})
-        inDirs=getValue(inDirs,'lib|dist|bin')
+        let inDirs = cliGetCmd(cliArgs, { name: 'dirs', index: 1, mode: 'flags-important' })
+        inDirs = getValue(inDirs, 'lib|dist|bin')
         // --ext
-        let rule = cliGetCmd(cliArgs,{name:'ext',index:1,mode:'flags-important'})
-        rule=getValue(rule,'.js$')
-        
-        let files = getFileList(inDirs,{wkd:wkd,macthRules:[new RegExp(rule)]})
+        let rule = cliGetCmd(cliArgs, { name: 'ext', index: 1, mode: 'flags-important' })
+        rule = getValue(rule, '.js$')
+
+        let files = getFileList(inDirs, { wkd: wkd, macthRules: [new RegExp(rule)] })
         // log(files)
 
-        log(files.map(file=>{return {...file,name:file.name.replace(new RegExp(`^${stdWkd}/`),'')}}))
+        log(files.map(file => { return { ...file, name: file.name.replace(new RegExp(`^${stdWkd}/`), '') } }))
 
 
         log(`[file-size] size of file list: \n`)
-        let fsdList = files.map(file=>{
+        let fsdList = files.map(file => {
             // let 
             let fsd = getFileSize(file.name)
             // fsd[0] = delstrPrefix(fsd[0], true,ensureEndsWith(wkd,'/'))
@@ -453,8 +453,8 @@ async function main(){
 
         // relative to wkd (to show in result)
 
-        fsdList.forEach(fsd=>{
-            fsd[0]=fsd[0].replace(new RegExp(`^${stdWkd}/`),'')
+        fsdList.forEach(fsd => {
+            fsd[0] = fsd[0].replace(new RegExp(`^${stdWkd}/`), '')
         })
         log(fsdList)
         // let fsdkvList = fsdList.map(fsd=>toKeyValTree(fsd))
@@ -465,40 +465,40 @@ async function main(){
         log(`[file-size] markdown table of file size: \n`)
         log(markdownTable)
         // log(`[file-size] write to markdown file: \n`)
-        writeMarkdownFile({text:markdownTable,wkd:ensureEndsWith(wkd,'/')})
+        writeMarkdownFile({ text: markdownTable, wkd: ensureEndsWith(wkd, '/') })
 
     }
 
 
-    if(valIsOneOfList(cmd,cmdListify('css-cdn'))){
+    if (valIsOneOfList(cmd, cmdListify('css-cdn'))) {
         log(`[css-cdn] get cdn for iconfont.css`)
 
         let wkd = './'
-        let wkdInCmd = cliGetCmd(cliArgs,{name:'wkd',index:1,mode:'flags-important'})
-        wkd=wkdInCmd?wkdInCmd:wkd
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: 1, mode: 'flags-important' })
+        wkd = wkdInCmd ? wkdInCmd : wkd
         // log(`[file-size] workspace: ${wkdInCmd}`)
 
-        let text :string=''
-      
+        let text: string = ''
 
-        text=loadTextFile(`fonts/iconfont.css`)
+
+        text = loadTextFile(`fonts/iconfont.css`)
         // // todo: slice @font-face  { xxx }
-        let cdncss:string=''
+        let cdncss: string = ''
 
         // cdncss=toFontCssCdn({text,cdn:'//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/dist/iconfont.'})
-        cdncss=toFontCssCdn({text,cdn:'//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/fonts/iconfont.'})
+        cdncss = toFontCssCdn({ text, cdn: '//cdn.jsdelivr.net/gh/ymc-github/zero-iconfont-hiicon@main/fonts/iconfont.' })
         log(cdncss)
 
         // https://juejin.cn/post/6844903758942453768
         // log(cdncss.match(/@font-face \{(\n|.)*/im))
 
-        let url :string = ''
-        let data =parseGithubUrl('https://github.com/YMC-GitHub/zero-iconfont-hiicon/blob/main/fonts/iconfont.css')
-        log(`[info] jsdelivr & github: `,getCdnJsdelivrUrl(data))
+        let url: string = ''
+        let data = parseGithubUrl('https://github.com/YMC-GitHub/zero-iconfont-hiicon/blob/main/fonts/iconfont.css')
+        log(`[info] jsdelivr & github: `, getCdnJsdelivrUrl(data))
         // log(`[info] jsdelivr & npm:`)
         // log(getCdnJsdelivrUrl([...data.slice(0,4),'npm']))
 
-        log(`[info] staticaly & github: `,getCdnJsdelivrUrl(data,'//cdn.staticaly.com'))
+        log(`[info] staticaly & github: `, getCdnJsdelivrUrl(data, '//cdn.staticaly.com'))
         // log(`[info] staticaly & npm:`)
         // log(getCdnJsdelivrUrl([...data.slice(0,4),'npm'],'//cdn.staticaly.com'))
     }
@@ -516,7 +516,7 @@ async function main(){
 }
 runasync(main)
 
-// tsx ./src/cli.ts 0 00 00 
+// tsx ./src/cli.ts 0 00 00
 // tsx ./src/cli.ts file-zise --cmd file-size
 // tsx ./src/cli.ts file-zise ./packages/jcm
 
