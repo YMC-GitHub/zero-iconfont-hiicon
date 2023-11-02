@@ -1,5 +1,5 @@
 import { camelize } from './string'
-import { getParamName, formatText } from './cli-util'
+import { getParamName, formatText } from './cli-param-util'
 
 export interface CliParam {
     name: string, type: string, value: string | boolean | number, desc: string, optional?: boolean
