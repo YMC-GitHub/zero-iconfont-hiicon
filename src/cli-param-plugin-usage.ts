@@ -35,10 +35,10 @@ export const builtinToUsageOption: ToUsageOption = {
  * @sample
  * ```
  * // [{name:'help',type:'boolean',value:false,desc:'info help'}] -> 'help info help (default:false)'
- * PluginUsage([{name:'help',type:'boolean',value:false,desc:'info help'}])
+ * paramPluginUsage([{name:'help',type:'boolean',value:false,desc:'info help'}])
  * ```
  */
-export function pluginUsage(param: CliParam[], opts?: ToUsageOptionLike) {
+export function paramPluginUsage(param: CliParam[], opts?: ToUsageOptionLike) {
     let res: string = ''
     let option: ToUsageOption = { ...builtinToUsageOption, ...(opts ? opts : {}) }
     // [{name:'help',type:'boolean',value:false,desc:'info help'}] -> 'help info help (default:false)'
