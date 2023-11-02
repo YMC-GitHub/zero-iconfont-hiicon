@@ -15,6 +15,8 @@ import { readJsonFileSync, writeJsonFileSync } from './editjson'
 // changelogstyle.plugin = [ChangelogStylePluginMarkdowntable()]
 import { clihooks2array, getLibNameFromPath, getPackagesLocFromPath, getLogInfo, chaintask } from './changelog-util'
 import { objectPick, objectSelectKeys, deepClone } from './object'
+
+import { paramPluginUsage } from "./cli-param-plugin-usage"
 const { log } = console
 
 // @ymc/render-cmted-msgs-to-pkg-changelog
@@ -167,7 +169,7 @@ function render(data: Commitlog[], options = {}) {
 
 // todo: param to types
 function param() {
-    return [
+    let res: any = [
         // ...baseParam(),
         {
             name: '--packages-loc-reg',
@@ -212,6 +214,7 @@ function param() {
             desc: 'set true to log [task] msg'
         }
     ]
+    return res
 }
 // todo: param to builtin option
 
@@ -250,6 +253,7 @@ export async function genChangelog(options = {}) {
 
     let loc: string = ''
 
+    log(paramPluginUsage(param()))
     logtask('[task] filter msg for pkg')
     logtask('[task] make changelog with tpl')
 
