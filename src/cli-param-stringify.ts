@@ -3,7 +3,7 @@
 
 export type ParamDataJsonLike = Record<string, string>
 export interface ParamDataJsonStringifyOption {
-    modeStyle: string,
+    modeStyle: 'cli' | 'httpquery' | 'swithoption',
     mode: string
 }
 export const builtinParamDataJsonStringifyOption = {
@@ -34,24 +34,39 @@ export function paramJsonToString(json: ParamDataJsonLike[], options?: any) {
 
     // param json to httpquery string exp
     if (option.mode === 'string' && option.modeStyle === 'httpquery') {
-
-        res = Object.keys(json)
-            .map(key => {
-                // @ts-ignore
-                let val = json[key]
-                return `${key}=${val}`
-            })
-            .join('&')
+        res = kvsify(json, '=&')
     }
     // param json to swithoption string exp
     if (option.mode === 'string' && option.modeStyle === 'swithoption') {
-        res = Object.keys(json)
-            .map(key => {
-                // @ts-ignore
-                let val = json[key]
-                return `${key}=${val}`
-            })
-            .join(';')
+        res = kvsify(json, '=;')
     }
+    return res
+}
+
+/**
+ * kvs - key value string
+ * @sample
+ * ```
+ * // {a:'b',c:1} => 'a=b;c=1'
+ * kvsify({a:'b',c:1},'=;') 
+ * 
+ * // {a:'b',c:1} => 'a=b&c=1'
+ * kvsify({a:'b',c:1},'=&') 
+ * 
+ * // {a:'b',c:1} => 'a:b,c:1'
+ * kvsify({a:'b',c:1},':,') 
+ * 
+ * // {a:'b',c:1} => 'a=b c=1'
+ * kvsify({a:'b',c:1},'= ') 
+ * ```
+ */
+export function kvsify(json: any, sep = '=;') {
+    let [kv, kvp] = sep.trim().split('')
+    let res: string = Object.keys(json)
+        .map(key => {
+            let val = json[key]
+            return `${key}${kv}${val}`
+        })
+        .join(kvp)
     return res
 }
