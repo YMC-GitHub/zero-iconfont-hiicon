@@ -1,9 +1,13 @@
 import { formatDate } from './date'
 
+const { log } = console
+
 export class BaseInfo {
     cache: string[] = []
     action: string = ''
     disableAll: boolean = false
+    // allow custom log func
+    log: (...data: any[]) => void = log
     constructor() {
 
     }
@@ -14,7 +18,7 @@ export class BaseInfo {
         let note = tpl.replace(/text/, text).replace(/time/, time)
         this.cache.push(note)
         if (this.isAction('print-in-record')) {
-            console.log(note)
+            this.log(note)
         }
         // this.cache.push(recordInfo(text,tpl))
         return this
@@ -23,13 +27,13 @@ export class BaseInfo {
         if (this.disableAll) return this
         this.record(text, tpl)
         if (!this.isAction('print-in-record')) {
-            console.log(this.cache[this.cache.length - 1])
+            this.log(this.cache[this.cache.length - 1])
         }
         return this
     }
     printAll() {
         if (this.disableAll) return this
-        console.log(this.toString())
+        this.log(this.toString())
         return this
     }
     toString() {
