@@ -1,0 +1,28 @@
+export interface ChangelogOption {
+  help:boolean;
+  version:boolean;
+  logInfo:boolean;
+  logTask:boolean;
+  commitlogLoc:string;
+  commitlogSortDate:boolean;
+  ignoreTypes:string;
+  ignoreSubjects:string;
+  monoRepo:boolean;
+  changelogLoc:string;
+  pickType:string;
+  omitType:string;
+  pickScope:string;
+  omitScope:string;
+  pickSubject:string;
+  omitSubject:string;
+  pickFile:string;
+  omitFile:string;
+  filterOrder:string;
+  lastestCount:number;
+  sinceLastHash:boolean;
+  commitpkgLoc:string;
+  commitpkgFilterOrder:string;
+  pickPkg:string;
+  omitPkg:string;
+  packagesLocReg:RegExp;
+}

@@ -14,69 +14,24 @@ import { readJsonFileSync, writeJsonFileSync } from './editjson'
 // register custom plugin to changelogstyle
 // changelogstyle.plugin = [ChangelogStylePluginMarkdowntable()]
 import { clihooks2array, getLibNameFromPath, getPackagesLocFromPath, getLogInfo, chaintask } from './changelog-util'
-import { objectPick, objectSelectKeys, deepClone } from './object'
+// import { objectPick, objectSelectKeys, deepClone } from './object'
 
-import { paramPluginUsage } from "./cli-param-plugin-usage"
+import { param2usage, usage2param, beautyUsage } from "./cli-param-plugin-usage"
+
 const { log } = console
 
-// @ymc/render-cmted-msgs-to-pkg-changelog
+import { usage } from "./changelog-usage"
+import { param } from "./changelog-param"
+import type { ChangelogOption } from './changelog-types'
 
 
-interface CommitlogFilterOption {
-    version: string,
-    name: string,
-    repo: string,
-    style: string
-}
+// workflow: define-usage,usage-to-param
+// let paramfu = usage2param(usage(), { type: true })
 
-function filterData(data: Commitlog[], option: any) {
-
-    const loginfo = getLogInfo(option.logInfo)
-
-    loginfo('[info] grep pkgs commits')
-    let cache: Commitlog[] = data.map(v => deepClone(v))
-
-
-    // --globy package/noop/*
-    // const reg = new RegExp(`${libdir}/${libname}/`, 'i')
-    // cache = data.filter(v => v.file.some(f => reg.test(f)))
-    // cache = gitlog.filterInfoByFile(new RegExp(`${libdir}/${libname}/`, 'i'))
-    if (option.globy) {
-        let reg = new RegExp(option.globy.replace('*', '.*'), 'i')
-        cache = data.filter(v => v.file.some(f => reg.test(f)))
-    }
-
-    // log('[info] filter since last commit id')
-    // cache = gitlog.filterSinceLastChanglog(cache, lastId)
-    // filter:ignore docs
-    // cache = gitlog.filterIgnoreScope(cache, docsReg);
-
-    // --since-date 2020-11-12
-    if (option.sinceDate) {
-        loginfo('[info] only since date')
-    }
-
-    // --ignore-types "build,docs"
-    if (option.ignoreTypes) {
-        loginfo('[info] filter types with ignore type')
-        // cache = cache.filter(v => v.type !== 'docs')
-
-        let ignoretypes = clihooks2array(option.ignoreTypes, objectSelectKeys(option, objectPick(option, 'cliHook')))
-        // ignore empty type
-        // ignoretypes.push('')
-        cache = cache.filter(v => !ignoretypes.some(vn => v.type === vn))
-    }
-    //  --latest-count 10
-    if (option.latestCount && option.latestCount >= 1 && cache.length > 0) {
-        loginfo('[info] only the latet count')
-        cache = cache.slice(0, option.latestCount)
-    }
-    // --only-the-latest true
-    // if (cache.length > 0) cache = cache[0];
-
-    return cache
-}
-
+// workflow: define-param,param-to-usage
+// paramPluginUsage(param(), { type: true })
+// log(paramfu)
+import { filterCommitlog } from './commitlog-filter'
 
 interface mdTableRenderOption {
     version: string,
@@ -156,7 +111,7 @@ function render(data: Commitlog[], options = {}) {
     if (option.monoRepo) {
         option.globy = `${libdir}/${libname}/*`
     }
-    cache = filterData(data, option)
+    cache = filterCommitlog(data, option)
     // log(cache)
     loginfo('[info] cmtedlog count (after filter): ', cache.length)
 
@@ -165,78 +120,25 @@ function render(data: Commitlog[], options = {}) {
     return text.trim()
 }
 
+// export interface ChangelogOption {
+//     ignoreTypes?: string
+//     ignoreSubjects?: string,
+//     onlyPkgs?: string,
+//     outPkgs?: boolean
+//     commitlogLoc: string,
+//     commitpkgLoc: string,
+//     changelogLoc: string,
+//     logInfo: boolean,
+//     logTask: boolean,
+//     monoRepo: boolean,
+
+// }
 
 
-// todo: param to types
-function param() {
-    let res: any = [
-        // ...baseParam(),
-        {
-            name: '--packages-loc-reg',
-            type: 'regexp',
-            value: undefined, /// ^packages\//,
-            desc: 'the regexp of packages location'
-        },
-        {
-            name: '--out',
-            type: 'string',
-            value: 'pkgs-cmted.tmp.json',
-            desc: 'the file path of output'
-        },
-        {
-            name: '--ignore-types',
-            type: 'string',
-            value: 'docs,chore,tool,style',
-            desc: 'the types to ignore'
-        },
-        {
-            name: '--ignore-subjects',
-            type: 'string',
-            value: '',
-            desc: 'the subjects to ignore'
-        },
-        {
-            name: '--only-pkgs',
-            type: 'string',
-            value: '',
-            desc: 'filter pkgs with the packages loc '
-        },
-        {
-            name: '--log-info',
-            type: 'boolean',
-            value: false,
-            desc: 'set true to log [info] msg'
-        },
-        {
-            name: '--log-task',
-            type: 'boolean',
-            value: false,
-            desc: 'set true to log [task] msg'
-        }
-    ]
-    return res
-}
-// todo: param to builtin option
-
-export interface ChangelogOption {
-    ignoreTypes?: string
-    ignoreSubjects?: string,
-    onlyPkgs?: string,
-    outPkgs?: boolean
-    commitlogLoc: string,
-    commipkgLoc: string,
-    changelogLoc: string,
-    logInfo: boolean,
-    logTask: boolean,
-    monoRepo: boolean,
-
-}
-
-
-export async function genChangelog(options = {}) {
+export async function genChangelog(options: any = {}) {
     const option: ChangelogOption = {
         commitlogLoc: 'commitlog.tmp.json',
-        commipkgLoc: 'cmtedpkgs.tmp.json',
+        commitpkgLoc: 'cmtedpkgs.tmp.json',
         changelogLoc: 'CHANGELOG.md',
         outPkgs: true,
         logInfo: false,
@@ -253,7 +155,30 @@ export async function genChangelog(options = {}) {
 
     let loc: string = ''
 
-    log(paramPluginUsage(param()))
+    // todo: set
+    // 'define-usage' | 'get-value-by-name' | 'define-param' | 'define-flags'
+    // aa.mode='define-usage'
+    // todo: aa.option(`-h,--help type desc true index`)
+
+    // todo: get
+    // aa.mode='get-value-by-name';aa.data=options
+    // aa.option(`-h,--help type desc true index`)
+    // --help true
+    if ([options.help, options.h].includes(true)) {
+        log(usage())
+        return
+    }
+    // --usage2param true
+    if ([options.usage2param].includes(true)) {
+        log(usage2param(usage(), { type: true }))
+        return
+    }
+
+
+    // let usage = paramPluginUsage(param(), { type: true })
+    // log(usage)
+    // log(fromUsage(usage, { type: true }))
+
     logtask('[task] filter msg for pkg')
     logtask('[task] make changelog with tpl')
 
@@ -261,71 +186,86 @@ export async function genChangelog(options = {}) {
     // let cmtedmsgs: Record<string, string | string[]>[]
     let cmtedlogs: Commitlog[]
 
-    // --commitlog-loc  'commitlog.tmp.json'
+    // --commitlog-loc 'commitlog.tmp.json'
     loc = option.commitlogLoc
     const changelogio = new ChanelogFileIoStream()
     jsonStreamIo.init(loc)
     cmtedlogs = await jsonStreamIo.read([])
 
     // sort commitlog with date
-    // @ts-ignore
-    cmtedlogs = cmtedlogs.sort((a, b) => new Date(b.date) - new Date(a.date))
+    if (option.commitlogSortDate) {
+        // @ts-ignore
+        cmtedlogs = cmtedlogs.sort((a, b) => new Date(b.date) - new Date(a.date))
+    }
+
     // log(cmtedlogs)
     loginfo('[info] cmtedlog count: ', cmtedlogs.length)
 
 
     // pass --ignore-types 'chore,tool,docs,style' to ignore this types
-    if (option.ignoreTypes) {
-        let ignoreTypes = getIgnoreTypes(option.ignoreTypes, 'chore,tool,docs,style') //'chore,tool,docs,style'
-        cmtedlogs = cmtedlogs.filter(v => !ignoreTypes.some(it => it === v.type))
-    }
-    // pass --ignore-subject 'put changelog,dbg markdown list' to ignore this subject
-    if (option.ignoreSubjects) {
-        let ignoresubjects = getIgnoreTypes(option.ignoreSubjects, 'put changelog,dbg markdown list')
-        // ignoresubjects.push('dbg markdown list')
-        cmtedlogs = cmtedlogs.filter(v => !ignoresubjects.some(it => it === v.subject))
-    }
+    // if (option.ignoreTypes) {
+    //     let ignoreTypes = getIgnoreTypes(option.ignoreTypes, 'chore,tool,docs,style') //'chore,tool,docs,style'
+    //     cmtedlogs = cmtedlogs.filter(v => !ignoreTypes.some(it => it === v.type))
+    // }
+    // please use --type-omit instead of --ignore-types
+
+
+
+    // - pass --ignore-subjects 'put changelog,dbg markdown list' to ignore this subject
+    // please use --subject-omit instead of --ignore-subjects
+    // if (option.ignoreSubjects) {
+    //     let ignoresubjects = getIgnoreTypes(option.ignoreSubjects, 'put changelog,dbg markdown list')
+    //     // ignoresubjects.push('dbg markdown list')
+    //     cmtedlogs = cmtedlogs.filter(v => !ignoresubjects.some(it => it === v.subject))
+    // }
+
     // log(cmtedlogs)
     // log(cmtedlogs.length)
 
 
+    // --mono-repo false
     if (!option.monoRepo) {
-        let nomonorepotext = render(cmtedlogs, { ...option })
+        // todo: gen changelog text for plain repo
+        let plainRepoChangelogText = render(cmtedlogs, { ...option })
         // log(nomonorepotext)
-        loginfo('[info] write changelog for non-mono repo')
+        loginfo('[info] write changelog for plain repo (this repo is not mono repo)')
         loc = option.changelogLoc
         changelogio.init(loc)
         log(`[info] out: ${loc}`)
-        await changelogio.write(nomonorepotext)
+        await changelogio.write(plainRepoChangelogText)
         return
     }
 
-
-    // put changelog
-    // dbg markdown list
-    loginfo(`[info] src: ${loc}`)
-    // log(cmtedmsgs)
-
-
     let cmtedpkgs: string[]
     loginfo('[info] read cmted pkgs')
+    // 'cmtedpkgs.tmp.json' -> ['package/a','package/b']
+    loc = option.commitpkgLoc
     loginfo(`[info] src: ${loc}`)
-    // location -> ['a']
-    loc = option.commipkgLoc
     jsonStreamIo.init(loc)
     cmtedpkgs = await jsonStreamIo.read([])
 
+    loginfo('[info] filter cmted pkgs')
+    // filter-order:pick-pik,omit-pkg
+    // option.filterOrder.split(",").map(v => v.trim()).filter(v => v)
+    cmtedpkgs = cmtedpkgs.filter(location => isOneOfThem(location, option.pickPkg))
+    cmtedpkgs = cmtedpkgs.filter(location => !isOneOfThem(location, option.omitPkg))
 
-    // ['a' ] -> [{loc:'a'}]
+    loginfo('[info] stdify cmted pkgs')
+    // ['package/a'] -> [{loc:'package/a'}]
     let stdcmtedpkgs = cmtedpkgs.map(v => ({
         loc: v
     }))
 
-    // pass --only-pkgs 'package/a,package/b' to ignore this pkgs
-    if (option.onlyPkgs) {
-        let onlyPkgs = getIgnoreTypes(option.onlyPkgs, '')
-        stdcmtedpkgs = stdcmtedpkgs.filter(v => onlyPkgs.some(it => v.loc.indexOf(it) >= 0))
-    }
+    // - pass --only-pkgs 'package/a,package/b' to ignore this pkgs
+    // if (option.onlyPkgs) {
+    //     let onlyPkgs = getIgnoreTypes(option.onlyPkgs, '')
+    //     stdcmtedpkgs = stdcmtedpkgs.filter(v => onlyPkgs.some(it => v.loc.indexOf(it) >= 0))
+    // }
+    // please use --file-pick instead of --only-pkgs
+    // eg. --file-pick 'package/a,package/b'
+    // eg. --file-pick 'package/*'
+
+
 
     // log(cmtedpkgs)
 
@@ -339,18 +279,10 @@ export async function genChangelog(options = {}) {
     })
 
     loginfo('[info] write cmtedpkgs changelog')
-    // pass --out-pkgs true to write changelog to packge/xx location
-    if (option.outPkgs) {
+    // - pass --out-pkgs true to write changelog to packge/xx location
+    // + please use --mono-repo instead of --out-pkgs
+    if (option.monoRepo) {
         // loginfo('[info] write packages/xx/changelog.md')
-        // pkgschangelogs.forEach(v => {
-        //     let txt = v.data
-        //     // txt = setTableStyle(txt)
-        //     writeFileSync(`${v.loc}/${option.changelogLoc}`, txt)
-        //     log(`[info] out: ${v.loc}/${option.changelogLoc}`)
-        //     // rmSync(`${v.loc}/CHANGELOD.md`)
-
-        //     // TextFileIoStream
-        // })
         let task = pkgschangelogs.map(v => {
             return async () => {
                 let txt = v.data
@@ -387,5 +319,19 @@ function getIgnoreTypes(input: string, builtin: string) {
     res = (input ? input : builtin).split(',')
     return res
 }
+function isOneOfThem(one: string, them: string) {
+    if (!them) return false
+    let isReg = them.indexOf('*') >= 0
+    let input: string[] = them.split(",").map(v => v.trim()).filter(v => v)
+    if (isReg) {
+        // feat: regard * as .*
+        let inputReg = input.map(v => v.replace(/\*/g, '.*')).map(v => new RegExp(`^${v}`))
+        // console.log(inputReg)
+        // list = list.filter(vl => !inputReg.some(reg => reg.test(vl)))
+        return inputReg.some(reg => reg.test(one))
+    }
+    return input.includes(them)
+}
+
 
 // tsx src/changelog.ts

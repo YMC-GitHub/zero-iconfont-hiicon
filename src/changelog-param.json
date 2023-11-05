@@ -1,0 +1,158 @@
+[
+  {
+    "name": "-h,--help",
+    "type": "boolean",
+    "value": "false",
+    "desc": "info help usage"
+  },
+  {
+    "name": "-v,--version",
+    "type": "boolean",
+    "value": "1.0.0",
+    "desc": "info app version"
+  },
+  {
+    "name": "--log-info",
+    "type": "boolean",
+    "value": "false",
+    "desc": "set true to log [info] msg"
+  },
+  {
+    "name": "--log-task",
+    "type": "boolean",
+    "value": "false",
+    "desc": "set true to log [task] msg"
+  },
+  {
+    "name": "--commitlog-loc",
+    "type": "string",
+    "value": "commitlog.tmp.json",
+    "desc": "set the location of commitlog file"
+  },
+  {
+    "name": "--commitlog-sort-date",
+    "type": "boolean",
+    "value": "true",
+    "desc": "sort commitlog with date"
+  },
+  {
+    "name": "--ignore-types",
+    "type": "string",
+    "value": "chore,tool,docs,style",
+    "desc": "ignore this types"
+  },
+  {
+    "name": "--ignore-subjects",
+    "type": "string",
+    "value": "put changelog,dbg markdown list",
+    "desc": "ignore this subjects"
+  },
+  {
+    "name": "--mono-repo",
+    "type": "boolean",
+    "value": "false",
+    "desc": "this repo is mono repo"
+  },
+  {
+    "name": "--changelog-loc",
+    "type": "string",
+    "value": "CHANGELOG.md",
+    "desc": "set the location of changelog file"
+  },
+  {
+    "name": "--pick-type",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with type pick"
+  },
+  {
+    "name": "--omit-type",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with type omit"
+  },
+  {
+    "name": "--pick-scope",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with scope pick"
+  },
+  {
+    "name": "--omit-scope",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with scope omit"
+  },
+  {
+    "name": "--pick-subject",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with subject pick"
+  },
+  {
+    "name": "--omit-subject",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with subject omit"
+  },
+  {
+    "name": "--pick-file",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with file pick"
+  },
+  {
+    "name": "--omit-file",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter with file omit"
+  },
+  {
+    "name": "--filter-order",
+    "type": "string",
+    "value": "",
+    "desc": "commitlog filter order"
+  },
+  {
+    "name": "--lastest-count",
+    "type": "number",
+    "value": 0,
+    "desc": "commitlog filter with file omit"
+  },
+  {
+    "name": "--since-last-hash",
+    "type": "boolean",
+    "value": "false",
+    "desc": "commitlog filter since last hash in changelog.md"
+  },
+  {
+    "name": "--commitpkg-loc",
+    "type": "string",
+    "value": "cmtedpkgs.tmp.json",
+    "desc": "set the location of commitpkg file"
+  },
+  {
+    "name": "--commitpkg-filter-order",
+    "type": "string",
+    "value": "pkg-pick,pick-omit",
+    "desc": "commitpkg filter order"
+  },
+  {
+    "name": "--pick-pkg",
+    "type": "string",
+    "value": "",
+    "desc": "commitpkg filter with pkg pick"
+  },
+  {
+    "name": "--omit-pkg",
+    "type": "string",
+    "value": "",
+    "desc": "commitpkg filter with pkg omit"
+  },
+  {
+    "name": "--packages-loc-reg",
+    "type": "RegExp",
+    "value": "",
+    "desc": "the regexp of packages location"
+  }
+]
