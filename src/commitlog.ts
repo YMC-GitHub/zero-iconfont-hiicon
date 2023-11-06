@@ -1,103 +1,10 @@
 import { execWraper as exec, execOpts } from './exec'
 import type { ExecOption } from './exec'
 
+// import { formatDate } from './date'
+import { writeTpl, renderTpl } from './text-plain-template'
+import { BaseInfo } from './info'
 
-/**
- * format date
- * @sample
- * ```
- * let now = new Date();
- * formatDate("yyyy-MM-dd HH:mm:ss",now);
- * ```
- * @description
- * ```
- * M+
- * ```
- */
-export function formatDate(fmt:string, ctx?:Date) {
-    let res = fmt
-    // let ctx = this;
-    let context:Date = ctx?ctx:new Date()
-    const o :PlainObject= {
-        'M+': context.getMonth() + 1,
-        'd+': context.getDate(),
-        'H+': context.getHours(),
-        'm+': context.getMinutes(),
-        's+': context.getSeconds(),
-        'S+': context.getMilliseconds()
-    }
-    let reg:RegExp
-    reg = /(y+)/
-    if (reg.test(res)) {
-        res = res.replace(reg, x => `${context.getFullYear()}`.substring(4 - x.length))
-    }
-    /* eslint-disable no-restricted-syntax,guard-for-in */
-    for (const k in o) {
-        reg = new RegExp(`(${k})`)
-        if (reg.test(res)) {
-            res = res.replace(reg, x => (x.length === 1 ? o[k] : `00${o[k]}`.substring(String(o[k]).length)))
-        }
-    }
-    return res
-}
-
-
-// export function recordInfo(text:string,tpl='[info] [time] text'){
-//     let time = formatDate("yyyy-MM-dd HH:mm:ss")
-//     // .replace(/prefix/,prefix.replace(/:*$/,':'))
-//     let note = tpl.replace(/text/,text).replace(/time/,time)
-//     // console.log(note)
-//     return note
-// }
-
-
-export class BaseInfo{
-    cache:string[]=[]
-    action:string=''
-    disableAll:boolean=false
-    constructor(){
-
-    }
-    record(text:string,tpl='[info] [time] text'){
-        if(this.disableAll) return this
-        let time = formatDate("yyyy-MM-dd HH:mm:ss")
-        // .replace(/prefix/,prefix.replace(/:*$/,':'))
-        let note = tpl.replace(/text/,text).replace(/time/,time)
-        this.cache.push(note)
-        if(this.isAction('print-in-record')){
-            console.log(note)
-        }
-        // this.cache.push(recordInfo(text,tpl))
-        return this
-    }
-    print(text:string,tpl='[info] [time] text'){
-        if(this.disableAll) return this
-        this.record(text,tpl)
-        if(!this.isAction('print-in-record')){
-            console.log(this.cache[this.cache.length-1])
-        }
-        return this
-    }
-    printAll(){
-        if(this.disableAll) return this
-        console.log(this.toString())
-        return this
-    }
-    toString(){
-        return this.cache.join('\n')
-    }
-    isAction(action:string){
-        return (this.action.toLowerCase()===action.toLowerCase())
-    }
-    enablePrintInRecord(){
-        this.action='print-in-record'
-        return this
-    }
-
-    new(){
-        return new BaseInfo()
-    }
-}
 const info = new BaseInfo()
 // info.disableAll=true
 
@@ -152,36 +59,6 @@ function toArray(s: string) {
     return s.trim().split(/\r?\n/)
 }
 
-/**
- * 
- * @sample
- * ```
- * // 'hello {name}!' -> 'hello zero!'
- * renderTpl('hello {name}!',{name:'zero'})
- * ```
- */
-export function renderTpl(tpl: string, data: PlainObject) {
-    let res = tpl
-    Object.keys(data).forEach(key => {
-        const value = data[key]
-        res = res.replace(new RegExp(`{${key}}`, 'ig'), value)
-    })
-    return res
-}
-
-
-/**
- *
- * ```
- * writeTpl('{method} repo/owner',{method:'POST'}) //POST repo/owner
- * ```
- */
-export function writeTpl(tpl: string, data?: PlainObject) {
-    if (data) {
-        return renderTpl(tpl, data)
-    }
-    return (v: PlainObject) => renderTpl(tpl, v)
-}
 
 
 
@@ -227,7 +104,7 @@ export type PlainObject = Record<string, any>
 
 
 
-export interface Meni {
+export interface Commitlog {
     // issue: string;
     issue: string[];
     body: string;
@@ -255,12 +132,12 @@ class GitLog {
     infojson: GitCmtInfo[];
     options: PlainObject;
     status: PlainObject;
-    meniList:Meni[];
+    meniList: Commitlog[];
     constructor() {
         this.infojson = []
         this.options = {}
         this.status = {}
-        this.meniList=[]
+        this.meniList = []
     }
 
     set(name: string, list: string[]) {
@@ -476,19 +353,19 @@ class GitLog {
     /**
      * get commit msg info -parsed subject and body
      */
-    async parse(allowTypes='') {
+    async parse(allowTypes = '') {
         let data = await this.getinfo()
         // console.log(data)
         // log(`[task] parse gitlog`)
 
         // let allowTypes = ''
         let meniList = data.map((item, index) => {
-            let { subject, body,file } = item
-            const menifest = parse(subject[index], body[index],allowTypes)
+            let { subject, body, file } = item
+            const menifest = parse(subject[index], body[index], allowTypes)
             info.record('s:get-issue')
             let issue = getIssueInFoot(menifest.foot)
             info.record('e:get-issue')
-            
+
             // file
             return {
                 ...item,
@@ -511,22 +388,22 @@ class GitLog {
         return meniList
     }
 
-    flatMenilist(){
-        let meniList= this.meniList
-        return meniList.map(ml=>{
-            let pick =  {
-                file:strify(ml.file),
-                issue:strify(ml.issue)
+    flatMenilist() {
+        let meniList = this.meniList
+        return meniList.map(ml => {
+            let pick = {
+                file: strify(ml.file),
+                issue: strify(ml.issue)
             }
-            let res = {...ml,...pick}
+            let res = { ...ml, ...pick }
             // let res:any={}
             // Object.keys(ml).forEach(key=>{
             //     res[key]= strify(ml[key])
             // })
             return res
         })
-        function strify(v:string|string[]){
-            return  Array.isArray(v)?v.join(","):v
+        function strify(v: string | string[]) {
+            return Array.isArray(v) ? v.join(",") : v
         }
     }
 
@@ -848,7 +725,7 @@ export function parse(msg: string, msgBody: string, allowTypes: string) {
     info.record('s:min-subject')
     // slim subject
     // idea:del-type -> del-scope -> trim
-    subject = slimSubject(subject,type)
+    subject = slimSubject(subject, type)
     info.record('e:min-subject')
 
     return {
@@ -869,35 +746,35 @@ export function parse(msg: string, msgBody: string, allowTypes: string) {
             .flat(1)
             .map(v => v.trim())
     }
-    function slimSubject(subject:string,type:string){
+    function slimSubject(subject: string, type: string) {
         return subject
-        .replace(type, '')
-        .replace(/\(.*\):?/i, '')
-        .trim()
+            .replace(type, '')
+            .replace(/\(.*\):?/i, '')
+            .trim()
     }
 }
 
 
 
-import {jsonStreamIo} from "./jsonstreamio"
+import { jsonStreamIo } from "./jsonstreamio"
 
-class PlainStore{
-    cache:PlainObject[]=[]
-    constructor(){
+class PlainStore {
+    cache: PlainObject[] = []
+    constructor() {
     }
-    exist(value:PlainObject){
-        let {cache:store} = this
+    exist(value: PlainObject) {
+        let { cache: store } = this
         return store.some(vInStore => vInStore.hash === value.hash)
     }
-    prepend(value:PlainObject){
-        let {cache:store} = this
+    prepend(value: PlainObject) {
+        let { cache: store } = this
         store.unshift(value)
         return this.cache
         // if (!this.exist(value)) {
-            
+
         // }
     }
-    update(recieve:PlainObject[]){
+    update(recieve: PlainObject[]) {
         recieve.forEach(vInRecieve => {
             if (!this.exist(vInRecieve)) {
                 this.prepend(vInRecieve)
@@ -905,7 +782,7 @@ class PlainStore{
         })
         return this.cache
     }
-    load(store:PlainObject[]){
+    load(store: PlainObject[]) {
         this.cache = store
     }
     /**
@@ -922,11 +799,11 @@ class PlainStore{
 
 // git-cmt-msg-to-json
 // changelog
-export async function gitcmtmsgJsonify(location:string='',count:number=30,countall:boolean) {
+export async function gitcmtmsgJsonify(location: string = '', count: number = 30, countall: boolean) {
     const { log } = console
     const gitlog = new GitLog()
-    const plainStore =new PlainStore()
-// 
+    const plainStore = new PlainStore()
+    // 
     // log('[task] read gitlog')
     // const data = await gitlog.getinfo()
     // // log(data)
@@ -941,30 +818,30 @@ export async function gitcmtmsgJsonify(location:string='',count:number=30,counta
 
     // log('[info] read gitlog')
     log('[info] read the last gitlog')
-    if(countall){
+    if (countall) {
         // gitlog.options.n=undefined
-    }else{
-        gitlog.options.n = count?count:10
+    } else {
+        gitlog.options.n = count ? count : 10
     }
     const data = await gitlog.parse()
     // log(data)
-    log('[info] gitlog length of parsing: ',data.length)
+    log('[info] gitlog length of parsing: ', data.length)
 
 
     // READ -> UPDATE  -> WRITE
     // data flow: location -> string -> json -> string -> location
-    let o:PlainObject[]
+    let o: PlainObject[]
     log('[info] read,update,write gitlog')
     // location -> string -> json
     // const loc = process.argv[2]?process.argv[2]:'gitlog-info.shim.tmp.json'
-    const loc =location?location:'gitlog-info.shim.tmp.json'
+    const loc = location ? location : 'gitlog-info.shim.tmp.json'
 
     jsonStreamIo.init(loc)
     o = await jsonStreamIo.read([])
     plainStore.load(o)
-    o=plainStore.update(data)
+    o = plainStore.update(data)
     await jsonStreamIo.write(o)
-    log('[info] gitlog length: ',o.length)
+    log('[info] gitlog length: ', o.length)
     log(`[info] out: ${loc}`)
 
 }
