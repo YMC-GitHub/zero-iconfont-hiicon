@@ -2,7 +2,6 @@ import { execWraper as exec, execOpts } from './exec'
 const { log } = console
 import { rungit as runcmd } from './commitlog'
 import { JsonStreamIo } from './jsonstreamio'
-import { baseParam } from './cli-param-preset'
 /**
  * get loginfo function
  */
