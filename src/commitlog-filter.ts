@@ -1,6 +1,8 @@
 import type { Commitlog } from './commitlog'
-import { objectPick, objectSelectKeys, deepClone } from './object'
+import { objectPick, objectSelectKeys, deepClone, deepCloneArray } from './object'
 import type { CommitlogFilterOption } from "./commitlog-filter-types"
+import { camelize } from './string'
+// const { log } = console
 
 // interface CommitlogFilterOption {
 //     version: string,
@@ -12,34 +14,59 @@ import type { CommitlogFilterOption } from "./commitlog-filter-types"
 export function filterCommitlog(data: Commitlog[], option: any) {
 
     // const loginfo = getLogInfo(option.logInfo)
-
     // loginfo('[info] grep pkgs commits')
-    let cache: Commitlog[] = data.map(v => deepClone(v))
+    // fix `file from [] to {}`
+    let cache: Commitlog[] = deepCloneArray(data)
+    // data.map(v => deepClone(v))
+    // console.log(cache)
 
-    let pickedCommitlog = pickFileLike(cache, 'file', option.pickFile)
-    // --omit-file 'src/*'
-    let omitedCommitlog = omitFileLike(cache, 'file', option.omitFile)
+    cache = updateCacheInPickOmit(cache, 'file', option)
+    cache = updateCacheInPickOmit(cache, 'type', option)
+    cache = updateCacheInPickOmit(cache, 'scope', option)
+    cache = updateCacheInPickOmit(cache, 'subject', option)
+    cache = updateCacheInPickOmit(cache, 'file', option)
+    cache = updateCacheInPickOmit(cache, 'date', option)
 
-    // filter-order:'file-omit,file-pick'
-    delCommitlogLikeOmit(cache, omitedCommitlog)
-    addCommitlogLikePick(cache, pickedCommitlog)
 
-    // type-omit,type-pick
-    delCommitlogLikeOmit(cache, omitFileLike(cache, 'type', option.omitType))
-    addCommitlogLikePick(cache, pickFileLike(cache, 'type', option.pickType))
 
-    // scope-omit,scope-pick
-    delCommitlogLikeOmit(cache, omitFileLike(cache, 'scope', option.omitScope))
-    addCommitlogLikePick(cache, pickFileLike(cache, 'scope', option.pickScope))
-    // subject-omit,subject-pick
-    delCommitlogLikeOmit(cache, omitFileLike(cache, 'subject', option.omitSubject))
-    addCommitlogLikePick(cache, pickFileLike(cache, 'subject', option.pickSubject))
+    // let pickedCommitlog: Commitlog[] = []
+    // // --omit-file 'src/*'
+    // let omitedCommitlog: Commitlog[] = []
 
-    delCommitlogLikeOmit(cache, omitFileLike(cache, 'file', option.omitFile))
-    addCommitlogLikePick(cache, pickFileLike(cache, 'file', option.pickFile))
 
-    delCommitlogLikeOmit(cache, omitFileLike(cache, 'date', option.omitDate))
-    addCommitlogLikePick(cache, pickFileLike(cache, 'date', option.pickDate))
+    // omitedCommitlog = omitFileLike(cache, 'file', option.omitFile)
+    // pickedCommitlog = pickFileLike(cache, 'file', option.pickFile)
+    // // filter-order:'file-omit,file-pick'
+    // delCommitlogLikeOmit(cache, omitedCommitlog)
+    // // addCommitlogLikePick(cache, pickedCommitlog)
+    // cache = option.pickFile ? pickedCommitlog : cache
+    // // log(omitedCommitlog, pickedCommitlog, cache)
+
+
+    // // type-omit,type-pick
+    // omitedCommitlog = omitFileLike(cache, 'type', option.omitType)
+    // pickedCommitlog = pickFileLike(cache, 'type', option.pickType)
+
+    // // log(omitedCommitlog, pickedCommitlog, cache)
+    // delCommitlogLikeOmit(cache, omitedCommitlog)
+    // // pick from omit?pick from cache?only-pick?
+    // // addCommitlogLikePick(cache, pickedCommitlog)
+    // cache = option.pickType ? pickedCommitlog : cache
+    // log(`[info] count of  omit-type,pick-type,current-commitlog:`, omitedCommitlog.length, pickedCommitlog.length, cache.length)
+
+
+    // // scope - omit, scope - pick
+    // delCommitlogLikeOmit(cache, omitFileLike(cache, 'scope', option.omitScope))
+    // addCommitlogLikePick(cache, pickFileLike(cache, 'scope', option.pickScope))
+    // // subject-omit,subject-pick
+    // delCommitlogLikeOmit(cache, omitFileLike(cache, 'subject', option.omitSubject))
+    // addCommitlogLikePick(cache, pickFileLike(cache, 'subject', option.pickSubject))
+
+    // delCommitlogLikeOmit(cache, omitFileLike(cache, 'file', option.omitFile))
+    // addCommitlogLikePick(cache, pickFileLike(cache, 'file', option.pickFile))
+
+    // delCommitlogLikeOmit(cache, omitFileLike(cache, 'date', option.omitDate))
+    // addCommitlogLikePick(cache, pickFileLike(cache, 'date', option.pickDate))
 
     // --globy package/noop/*
     // const reg = new RegExp(`${libdir}/${libname}/`, 'i')
@@ -109,7 +136,24 @@ export function filterCommitlog(data: Commitlog[], option: any) {
 //     return res
 // }
 
-
+function updateCacheInPickOmit(cache: Commitlog[], key: string = 'file', option: any = {}) {
+    let pickedCommitlog: Commitlog[] = []
+    // --omit-file 'src/*'
+    let omitedCommitlog: Commitlog[] = []
+    omitedCommitlog = omitFileLike(cache, key, option[camelize(`omit-${key}`)])
+    pickedCommitlog = pickFileLike(cache, key, option[camelize(`pick-${key}`)])
+    // filter-order:'file-omit,file-pick'
+    delCommitlogLikeOmit(cache, omitedCommitlog)
+    // addCommitlogLikePick(cache, pickedCommitlog)
+    return option.pickFile ? pickedCommitlog : cache
+    // log(omitedCommitlog, pickedCommitlog, cache)
+}
+function onlyInPick(cache: Commitlog[], picked: Commitlog[]) {
+    return cache.filter(item => {
+        const { hash } = item
+        return picked.some(j => j.hash == hash)
+    })
+}
 function addCommitlogLikePick(cache: Commitlog[], picked: Commitlog[]) {
     picked.forEach(item => {
         const { hash } = item
@@ -131,16 +175,25 @@ function delCommitlogLikeOmit(cache: Commitlog[], omited: Commitlog[]) {
     })
 }
 
-
+// fix `file.some is not a function`
+function ensurePickOmitInputIsArray(file: string | string[]) {
+    return Array.isArray(file) ? file : [file]
+}
 function omitFileLike(data: Commitlog[], key: string = 'file', omitFile: string = '') {
     let cache: Commitlog[] = []
     if (omitFile) {
+        let rules = themArrayify(omitFile)
         cache = data.filter(item => {
             // const { file } = item
             // @ts-ignore
-            let file: string[] = item[key]
-            let res: boolean = file.some(v => isOneOfThem(v, omitFile))
-            return !res
+            let file: string[] = ensurePickOmitInputIsArray(item[key])
+            // console.log(`[omit-${key}] `, file)
+            let res: boolean
+            // res= file.some(v => isOneOfThem(v, omitFile))
+            res = file.some(act => rules.includes(act))
+            // res = !res
+            // log([`[omit-${key}] omit:`, omitFile, 'act:', file.join(','), res].join(' '))
+            return res
         })
     }
     return cache
@@ -148,11 +201,16 @@ function omitFileLike(data: Commitlog[], key: string = 'file', omitFile: string 
 function pickFileLike(data: Commitlog[], key: string = 'file', pickFile: string = '') {
     let cache: Commitlog[] = []
     if (pickFile) {
+        let rules = themArrayify(pickFile)
         cache = data.filter(item => {
             // const { file } = item
             // @ts-ignore
-            let file: string[] = item[key]
-            let res: boolean = file.some(v => isOneOfThem(v, pickFile))
+            let file: string[] = ensurePickOmitInputIsArray(item[key])
+            let res: boolean
+            // res= file.some(v => isOneOfThem(v, pickFile))
+            // res = file.some(v => isOneOfThem(v, pickFile))
+            res = file.some(act => rules.includes(act))
+            // log([`[pick-${key}] pick:`, pickFile, 'act:', file.join(','), res].join(' '))
             return res
         })
     }
@@ -170,4 +228,7 @@ function isOneOfThem(one: string, them: string) {
         return inputReg.some(reg => reg.test(one))
     }
     return input.includes(them)
+}
+function themArrayify(them: string | string[]) {
+    return Array.isArray(them) ? them : them.split(",").map(v => v.trim()).filter(v => v)
 }
