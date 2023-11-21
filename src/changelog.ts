@@ -74,7 +74,8 @@ interface RenderOption {
     repo: string,
     style: string,
     monoRepo: boolean,
-    globy: string
+    globy: string,
+    projectName?: string,
 }
 
 /**
@@ -91,6 +92,7 @@ function render(data: Commitlog[], options = {}) {
         style: 'table',
         monoRepo: true,
         globy: '*',
+        projectName: '',
         ...options
     }
     const { wkd } = option
@@ -102,7 +104,9 @@ function render(data: Commitlog[], options = {}) {
     loginfo('[info] read pkgs pkgjson ')
     const pkgjson = readJsonFileSync(`${libdir}/${libname}/package.json`, '{}')
     // @ts-ignore
-    const { version, name } = { version: '0.0.1', ...pkgjson }
+    let { version, name } = { version: '0.0.1', ...pkgjson }
+    // fix when there is not a package.json
+    name = name ? name : option.projectName
 
     loginfo('[info] grep pkgs commits')
     let cache: Commitlog[]
