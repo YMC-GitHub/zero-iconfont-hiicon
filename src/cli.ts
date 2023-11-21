@@ -1,4 +1,6 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs'
+import { resolve as resolvePath } from 'path'
+
 import parse from "./nano-args"
 import type { NanoArgsData } from "./nano-args"
 
@@ -7,20 +9,29 @@ import { getFileSize, toKeyValTree, toMarkdownTable, writeMarkdownFile } from ".
 
 import { loadTextFile, toFontCssCdn, parseGithubUrl, getCdnJsdelivrUrl } from "./cdn"
 import { touch } from "./touch"
-import { readJsonFileSync, writeJsonFileSync, sortJsonByKeys, editKeywords, editName, editRepo, getJsonContextInNs, setJsonValueInNs } from "./editjson"
+import { readJsonFileSync, writeJsonFileSync, sortJsonByKeys, editKeywords, editName, editRepo, getJsonContextInNs, setJsonValueInNs, readTextFileSync, writeTextFileSync } from "./editjson"
 import { downloadFile } from "./download"
 import { rm, mv, cp } from "./rm"
-import { gitcmtmsgJsonify } from "./commitlog"
+import { gitcmtmsgJsonify, rungit } from "./commitlog"
+import { execOpts } from "./exec"
+import { camelize } from "./string"
+import { Interface } from 'readline'
+import { getCmtPkgs } from "./commitpkg"
+import { genChangelog } from './changelog'
+import { globy } from './globy'
 
-
-
+import { addProfile, editCaCsr } from './qgssl'
+import { formatDate } from './date'
 
 const { log } = console
 function doNothing() {
 
 }
-function runasync(main: Function) {
-    return main().then(doNothing).catch(doNothing)
+function runasync(main: Function, env: 'pro' | 'dev' = 'pro') {
+    // feat(core): enable err log in dev env
+    // feat(core): close err log in pro env
+    let logfunc = env === 'pro' ? doNothing : log
+    return main().then(doNothing).catch(logfunc)
 }
 
 function valIsOneOfList(val: any, list: any[]) {
@@ -35,6 +46,31 @@ function join(...pathLike: string[]) {
     return pathLike.join('/').replace(/\/{2,}/, '/')
 }
 
+
+/**
+ * 
+ * @sample
+ * ```
+ * isOneOfThem('src/xx','*commitlog filter*')
+ * ```
+ */
+function isOneOfThem(one: string, them: string) {
+    // feat(core): regard them as regexp when including *
+    // feat(core): split them with ,
+    // feat(core): ignore empty space in them
+
+    if (!them) return false
+    let isReg = them.indexOf('*') >= 0
+    let input: string[] = them.split(",").map(v => v.trim()).filter(v => v)
+    if (isReg) {
+        // feat: regard * as .*
+        let inputReg = input.map(v => v.replace(/\*/g, '.*')).map(v => new RegExp(`^${v}`))
+        // console.log(inputReg)
+        // list = list.filter(vl => !inputReg.some(reg => reg.test(vl)))
+        return inputReg.some(reg => reg.test(one))
+    }
+    return input.includes(them)
+}
 
 interface CliGetCmdOption {
     name: string,
@@ -54,15 +90,47 @@ function cliGetCmd(data: NanoArgsData, opts?: CliGetCmdOptionLike, def: string =
     return res
 }
 
-// -w,--workspace -> [s,l]
+/**
+ * 
+ * @param name 
+ * @sample
+ * ```
+ * // '-w,--ws,--workspace -- set cli worksapce' -> 'w,ws,workspace'
+ * cliGetPureName('-w,--ws,--workspace')
+ * ``` 
+ */
 function cliGetPureName(name: string) {
+    let res: string = ''
+    // '-w,--workspace -- set location of xx'  -> '-w,--workspace'
     let [sl] = name.trim().split(" ")
-    let [s, l] = sl.split(",").map(v => v.trim().replace(/^-+/, '')).filter(v => v)
-    return [s, l].join(",")
+
+    // '-w,--workspace' -> 'w,workspace'
+    let namelist = sl.split(",").map(v => v.trim().replace(/^-+/, '')).filter(v => v)
+
+    //'--pkg-loc' -> 'pkgLoc'
+    namelist = namelist.map(name => camelize(name))
+
+    // only short and long
+    // let [s,l]=namelist
+    // res= [s, l].join(",")
+
+    // '-w,--ws,--workspace'
+    // support  name 3+ 
+    res = namelist.join(",")
+    return res
 }
 
-// cliGetValueByName({flags:{w:true}},'-w') -> true
+// 
 // cliGetValueByName({flags:{w:true}},'-w,--workspace') -> true
+
+/**
+ * 
+ * @sample
+ * ```ts
+ * cliGetValueByName({flags:{w:true}},'-w') // -> true
+ * cliGetValueByName({flags:{w:true}},'-w,--workspace') // -> true
+ * ``` 
+ */
 function cliGetValueByName(data: NanoArgsData, name: string) {
     let pname = cliGetPureName(name).split(",")
     let { flags, _, extras } = data
@@ -76,6 +144,7 @@ function cliGetValueByName(data: NanoArgsData, name: string) {
     }
     return res
 }
+
 
 function cliGetValue(data: NanoArgsData, opts?: CliGetCmdOptionLike, def?: any) {
 
@@ -110,6 +179,35 @@ function cliGetValue(data: NanoArgsData, opts?: CliGetCmdOptionLike, def?: any) 
 
     cmd = cmd != undefined ? cmd : def
     return cmd
+}
+
+
+interface CamelizeFlagsOption {
+    noAutoCamelize: boolean,
+    slim: boolean
+}
+type CamelizeFlagsOptionLike = Partial<CamelizeFlagsOption>
+type PlainObject = Record<string, any>
+
+function camelizeFlags(flags: PlainObject = {}, options: CamelizeFlagsOptionLike = {}) {
+    // let res = {}
+    const option: CamelizeFlagsOption = {
+        slim: true,
+        noAutoCamelize: false,
+        ...options
+    }
+    if (option.noAutoCamelize) return flags
+    Object.keys(flags).forEach(k => {
+        const ck = camelize(k)
+        // res[ck]=flags[k]
+        if (ck !== k) {
+            flags[ck] = flags[k]
+            if (option.slim) {
+                delete flags[k]
+            }
+        }
+    })
+    return flags
 }
 
 
@@ -188,28 +286,190 @@ function endSlash(s: string) {
 }
 
 
-async function main() {
-    log(`[zero] hello, zero!`)
 
+
+async function main() {
+
+    log(`[zero] hello, zero!`)
 
     // log(`[debug] nano  parse:`)
     let input = process.argv.slice(2);
     log(`[info] cli input`, decodeJSON(input));
     let cliArgs = parse(input);
+    camelizeFlags(cliArgs.flags)
+    // log(cliArgs)
     // let {flags,_,extras} =cliArgs;log(flags,_,extras);
 
     log(`[info] nano parse result`, decodeJSON(cliArgs))
 
+    // process.exit(0)
     // get cmd
     let cmd = cliGetCmd(cliArgs, { name: 'cmd', index: 0, mode: 'flags-important' })
 
+    if (valIsOneOfList(cmd, cmdListify('noop'))) {
+        let wkd: string = ''
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: -1, mode: 'flags-important' })
+        wkd = getValue(wkdInCmd, './')
+        log(`[${cmd}] workspace: ${wkd}`)
+        log(`[info] pwd :`, resolvePath('./'))
+    }
+
+    if (valIsOneOfList(cmd, cmdListify('set-bin-head'))) {
+        // get working dir
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
+        log(`[${cmd}] workspace: ${ws}`)
+
+        // supoort sortjsonkey --file xx 
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
+
+        let head = cliGetCmd(cliArgs, { name: 'head', index: -1, mode: 'flags-important' }, '#! /usr/bin/env node')
+
+        let location: string = join(ws, file)
+        // todo:join -- join,abs,rel-to-rcd,like-slash
+        log(`[${cmd}] read ${location}`)
+        let data = readTextFileSync(location)
+        log(`[${cmd}] edit ${location}`)
+        data = addTextFileHead(data, head)
+        function addTextFileHead(data: string, head: string = '') {
+            if (!head) return data
+
+            let res: string = ''
+            let arr = data.split(/\r?\n/)
+            let exist = arr[0].includes("#!")
+            if (!exist) {
+                // add
+                res = `${head}\n${data}`
+            } else {
+                // put
+                arr[0] = head
+                res = arr.join("\n")
+            }
+            return res
+        }
+        log(`[${cmd}] write ${location}`)
+        writeTextFileSync(location, data)
+    }
+
+    if (valIsOneOfList(cmd, cmdListify('get-cmted-pkgs,get-cmted-pkg'))) {
+        // get working dir
+        let wkd: string = ''
+        // - supoort touch --wkd xx 
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: -1, mode: 'flags-important' })
+        wkd = getValue(wkdInCmd, './')
+        log(`[${cmd}] workspace: ${wkd}`)
+
+        await getCmtPkgs(cliArgs.flags)
+    }
+    if (valIsOneOfList(cmd, cmdListify('get-changed-files,add-changed-files'))) {
+        // your get-changed-files src*
+        // get working dir
+        let wkd: string = ''
+        // - supoort touch --wkd xx 
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: -1, mode: 'flags-important' })
+        wkd = getValue(wkdInCmd, './')
+        log(`[${cmd}] workspace: ${wkd}`)
+        let include = cliGetCmd(cliArgs, { name: 'include', index: 1, mode: 'flags-important' }, '*')
+        let files: string[] = (await rungit(`git ls-files --modified `, execOpts)).split(/\r?\n/).filter(v => v)
+        let changedFilesInSrc: string[]
+        // changedFilesInSrc =globy(include, files)
+        changedFilesInSrc = files.filter(file => isOneOfThem(file, include))
+        // isOneOfThem()
+        log(changedFilesInSrc.join('\n'))
+        if (valIsOneOfList(cmd, cmdListify('add-changed-files'))) {
+            if (changedFilesInSrc.length > 0) await rungit(`git add ${changedFilesInSrc.join(' ')}`, execOpts)
+        }
+    }
+    if (valIsOneOfList(cmd, cmdListify('get-untracked-files,add-untracked-files'))) {
+        // your get-changed-files src*
+        // get working dir
+        let wkd: string = ''
+        // - supoort touch --wkd xx 
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: -1, mode: 'flags-important' })
+        wkd = getValue(wkdInCmd, './')
+        log(`[${cmd}] workspace: ${wkd}`)
+        let include = cliGetCmd(cliArgs, { name: 'include', index: 1, mode: 'flags-important' }, '*')
+        let files: string[] = (await rungit(`git ls-files --others --exclude-standard `, execOpts)).split(/\r?\n/).filter(v => v)
+        let changedFilesInSrc: string[]
+        // changedFilesInSrc =globy(include, files)
+        changedFilesInSrc = files.filter(file => isOneOfThem(file, include))
+        // pick
+        // isOneOfThem()
+        log(changedFilesInSrc.join('\n'))
+        if (valIsOneOfList(cmd, cmdListify('add-untracked-files'))) {
+            if (changedFilesInSrc.length > 0) await rungit(`git add ${changedFilesInSrc.join(' ')}`, execOpts)
+        }
+    }
+    if (valIsOneOfList(cmd, cmdListify('get-new-files,restore-new-files'))) {
+        // tsx src/cli.ts get-new-files
+        // your get-changed-files src*
+        // get working dir
+        let wkd: string = ''
+        // - supoort touch --wkd xx 
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: -1, mode: 'flags-important' })
+        wkd = getValue(wkdInCmd, './')
+        log(`[${cmd}] workspace: ${wkd}`)
+        let include = cliGetCmd(cliArgs, { name: 'include', index: 1, mode: 'flags-important' }, '*')
+
+        // git status  | grep "new file:"
+        let files: string[] = (await rungit(`git status `, execOpts)).split(/\r?\n/).filter(v => v)
+        let newfiles: string[]
+        newfiles = files.filter(file => /new file:/.test(file))
+        newfiles = newfiles.map(file => file.replace(/new file:/, '').trim())
+        // isOneOfThem()
+        log(newfiles.join('\n'))
+        if (valIsOneOfList(cmd, cmdListify('restore-new-files'))) {
+            if (newfiles.length > 0) await rungit(`git restore --staged ${newfiles.join(' ')}`, execOpts)
+        }
+    }
+
+
+    if (valIsOneOfList(cmd, cmdListify('cmt-files'))) {
+        // your cmt-files --date-format "+%Y-%m-%d %H:%M:%S" --time "2023-11-06 08:00:00" --msg "build(core): add func to  manage commitlog" --time-zone "+0800"
+        // get working dir
+        let wkd: string = ''
+        let wkdInCmd = cliGetCmd(cliArgs, { name: 'wkd', index: -1, mode: 'flags-important' })
+        wkd = getValue(wkdInCmd, './')
+        log(`[${cmd}] workspace: ${wkd}`)
+
+        let format = cliGetCmd(cliArgs, { name: 'date-format', index: -1, mode: 'flags-important' }, 'yyyy-MM-dd HH:mm:ss') //'+%Y-%m-%d %H:%M:%S'
+        let time = cliGetCmd(cliArgs, { name: 'time', index: -1, mode: 'flags-important' }, '')
+        let msg = cliGetCmd(cliArgs, { name: 'm,msg', index: -1, mode: 'flags-important' }, '')
+        let timezone = cliGetCmd(cliArgs, { name: 'timezone,tz', index: -1, mode: 'flags-important' }, '+0800')
+        let timestr = formatDate(format, time ? new Date(time) : new Date())
+        let msgFile = cliGetCmd(cliArgs, { name: 'msg-file', index: -1, mode: 'flags-important' }, '')
+        let dryrun = cliGetCmd(cliArgs, { name: 'dryrun', index: -1, mode: 'flags-important' }, '')
+        let printCmd = cliGetCmd(cliArgs, { name: 'print-cmd', index: -1, mode: 'flags-important' }, '')
+
+        let oscmdl: string[] = []
+        oscmdl.push(`git commit`)
+        if (msg) {
+            oscmdl.push(`-m "${msg}"`)
+        } else if (msgFile) {
+            oscmdl.push(`--file "${msgFile}"`)
+        }
+        if (timestr) {
+            // ['--date', timestr, timezone].filter(v => v).join(' ')
+            let times = timezone ? `--date "${timestr} ${timezone}"` : `--date "${timestr}"`
+            oscmdl.push(times)
+        }
+        let tpl: string = oscmdl.join(' ')
+        if (dryrun) {
+            log(tpl)
+        } else {
+            if (printCmd) log(tpl)
+            await rungit(tpl, execOpts)
+        }
+    }
+
 
     if (valIsOneOfList(cmd, cmdListify('download,down'))) {
+        log(`[info] usage: yours download --url https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg --file svg/circle.svg --ghproxy "https://ghproxy.com/"`)
         // supoort touch --url xx 
         let url: string = cliGetCmd(cliArgs, { name: 'u,url', index: -1, mode: 'flags-important' })
         // --file 
         let file: string = cliGetCmd(cliArgs, { name: 'f,file', index: -1, mode: 'flags-important' })
-        let ghproxy: string = cliGetCmd(cliArgs, { name: 'ghproxy', index: -1, mode: 'flags-important' }, 'https://ghproxy.com/');
+        let ghproxy: string = cliGetCmd(cliArgs, { name: 'ghproxy', index: -1, mode: 'flags-important' }, '');//https://ghproxy.com/
 
         // let url: string='https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg'
         // let ghproxy='https://ghproxy.com/'
@@ -219,7 +479,6 @@ async function main() {
         // log(url)
         // 'svg/circle.svg'
         downloadFile(url, { targetFile: file, overideTargetFile: false })
-
         // tsx ./src/cli.ts download --url https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/regular/circle.svg --file svg/circle.svg
     }
 
@@ -234,8 +493,20 @@ async function main() {
         // supoort touch --file xx and compact with touch xx
         let file = cliGetCmd(cliArgs, { name: 'file', index: 1, mode: 'flags-important' })
         file = getValue(file, '')
+        let text = cliGetCmd(cliArgs, { name: 'text', index: 2, mode: 'flags-important' })
+        text = getValue(text, '')
         log(`[${cmd}] touch ${file}`)
-        touch(file)
+        touch(file, text)
+    }
+    if (valIsOneOfList(cmd, cmdListify('cat'))) {
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
+        log(`[${cmd}] workspace: ${ws}`)
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
+
+        let location: string = join(ws, file)
+        log(`[${cmd}] read ${location}:`)
+        let data = readTextFileSync(location)
+        log(data)
     }
 
     if (valIsOneOfList(cmd, cmdListify('sortjsonkey,sjkey'))) {
@@ -282,8 +553,14 @@ async function main() {
         let sep = cliGetCmd(cliArgs, { name: 'sep', index: -1, mode: 'flags-important' }, ',')
         // supoort sortjsonkey --ns keywords
         let ns = cliGetCmd(cliArgs, { name: 'ns', index: -1, mode: 'flags-important' }, 'keywords')
+        let nsSep = cliGetCmd(cliArgs, { name: '--ns-sep', index: -1, mode: 'flags-important' }, '.')
+        // let key = [ns, name].filter(v => v).join(nsSep)
 
-        editKeywords(data, { include, exclude, sep, ns })
+        log(`[${cmd}] edit: ${ns}`)
+        let { context, lastns } = getJsonContextInNs(ns, data, nsSep)
+        // editKeywords(data, { include, exclude, sep, ns })
+        editKeywords(context, { include, exclude, sep, ns: lastns })
+        log(`[${cmd}] write: ${location}`)
         writeJsonFileSync(location, data)
     }
 
@@ -354,9 +631,10 @@ async function main() {
         let user = cliGetCmd(cliArgs, { name: '-u,--user', index: -1, mode: 'flags-important' }, 'ymc-github')
         let repo = cliGetCmd(cliArgs, { name: '-r,--repo', index: -1, mode: 'flags-important' }, 'noop')
         let mono = cliGetValue(cliArgs, { name: '-m,--mono', index: -1, mode: 'flags-important' })
-        let packageLoc = cliGetCmd(cliArgs, { name: '-l,--packageLoc', index: -1, mode: 'flags-important' })
+        let packageLoc = cliGetCmd(cliArgs, { name: '-l,--package-loc', index: -1, mode: 'flags-important' })
         let branch = cliGetCmd(cliArgs, { name: '-b,--branch', index: -1, mode: 'flags-important' })
         let name = cliGetCmd(cliArgs, { name: '-n,--name', index: -1, mode: 'flags-important' }, '')
+        // todo:param,usage,option
         log([packageLoc])
         editRepo(data, { user, repo, mono: mono ? true : false, name, packageLoc, branch })
         writeJsonFileSync(location, data)
@@ -364,33 +642,78 @@ async function main() {
 
 
     if (valIsOneOfList(cmd, cmdListify('edit-script'))) {
-        // get working dir
+
+        // feat(core): pass default text for text file reading  --default-text '{}'
+        // feat(core): pass file location for text file reading  --file 'package.json'
+
         // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
         let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: 1, mode: 'flags-important' }, './')
         log(`[${cmd}] workspace: ${ws}`)
-
         // supoort sortjsonkey --file xx 
         let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
+        let defaultText = cliGetCmd(cliArgs, { name: 'default-text', index: -1, mode: 'flags-important' }, '{}')
 
         let location: string = join(ws, file)
         // todo:join -- join,abs,rel-to-rcd,like-slash
         log(`[${cmd}] read ${location}`)
-        let data = readJsonFileSync(location)
-
+        let data = readJsonFileSync(location, defaultText)
+        // log(JSON.stringify(data, null, 0))
         // supoort sortjsonkey --ns keywords
-        let name = cliGetCmd(cliArgs, { name: '-n,--name', index: -1, mode: 'flags-important' }, 'private')
+        let name = cliGetCmd(cliArgs, { name: '-n,--name', index: -1, mode: 'flags-important' }, '')//test
         let value = cliGetValue(cliArgs, { name: '-v,--value', index: -1, mode: 'flags-important' })
-        let ns = cliGetCmd(cliArgs, { name: '--ns', index: -1, mode: 'flags-important' }, 'scripts')
+        let ns = cliGetCmd(cliArgs, { name: '--ns', index: -1, mode: 'flags-important' }, '') //scripts
         let nsSep = cliGetCmd(cliArgs, { name: '--ns-sep', index: -1, mode: 'flags-important' }, '.')
 
 
         // let {context} = getJsonContextInNs(`${ns}${nsSep}${name}`,data,nsSep)
         // context[name]=value
-        log([name, value])
-        data = setJsonValueInNs(`${ns}${nsSep}${name}`, value, data, nsSep)
+        // log([name, value])
+        log(`[${cmd}] edit: ${name}`)
+        // data = setJsonValueInNs(`${ns}${nsSep}${name}`, value, data, nsSep)
+        let key = [ns, name].filter(v => v).join(nsSep)
+        log(`[info] log ns,name join with ${nsSep}`, key)
+        data = setJsonValueInNs(key, value, data, nsSep)
+
+        log(`[${cmd}] save: ${location}`)
         writeJsonFileSync(location, data)
     }
 
+    if (valIsOneOfList(cmd, cmdListify('qgssl-add-profile'))) {
+        // todo:add qgssl
+        // addProfile,editCaCsr
+        // feat(core): pass default text for text file reading  --default-text '{}'
+        // feat(core): pass file location for text file reading  --file 'package.json'
+
+        // - supoort sortjsonkey -w xx  and compact with sortjsonkey xx
+        let ws = cliGetCmd(cliArgs, { name: 'w,workspace', index: -1, mode: 'flags-important' }, './')
+        log(`[${cmd}] workspace: ${ws}`)
+        // supoort sortjsonkey --file xx 
+        let file = cliGetCmd(cliArgs, { name: 'file', index: -1, mode: 'flags-important' }, 'package.json')
+        let defaultText = cliGetCmd(cliArgs, { name: 'default-text', index: -1, mode: 'flags-important' }, '{}')
+
+        let location: string = join(ws, `ca-config.json`)
+        // todo:join -- join,abs,rel-to-rcd,like-slash
+        log(`[${cmd}] read ${location}`)
+        let data: any
+        data = readJsonFileSync(location, defaultText)
+        data = addProfile(data, cliArgs.flags)
+        log(`[${cmd}] save: ${location}`)
+        writeJsonFileSync(location, data)
+
+
+        location = join(ws, `ca-csr.json`)
+        log(`[${cmd}] read ${location}`)
+        data = readJsonFileSync(location, defaultText)
+        data = editCaCsr(data, cliArgs.flags)
+        log(`[${cmd}] save: ${location}`)
+
+        location = join(ws, `ca-csr.json`)
+        log(`[${cmd}] read ${location}`)
+        data = readJsonFileSync(location, defaultText)
+        data = editCaCsr(data, cliArgs.flags)
+        log(`[${cmd}] save: ${location}`)
+
+    }
 
     if (valIsOneOfList(cmd, cmdListify('cp,copy'))) {
         // support: cp src des,cp --src src --des des,cp -s src -d des
@@ -406,7 +729,7 @@ async function main() {
 
         rm(src)
     }
-    if (valIsOneOfList(cmd, cmdListify('gcmh-to-json,git-cmt-msg-history-to-json'))) {
+    if (valIsOneOfList(cmd, cmdListify('get-commitlog,gcmh-to-json,git-cmt-msg-history-to-json'))) {
         // support: cp src des,cp --src src --des des,cp -s src -d des
         let src = cliGetCmd(cliArgs, { name: '--file', index: -1, mode: 'flags-important' }, '')
         let count = Number(cliGetValue(cliArgs, { name: '-n,--count', index: -1, mode: 'flags-important' }, 10))
@@ -414,6 +737,13 @@ async function main() {
 
         gitcmtmsgJsonify(src, count, countall)
     }
+
+    if (valIsOneOfList(cmd, cmdListify('changelog,chg'))) {
+        genChangelog(cliArgs.flags)
+    }
+
+
+
 
 
     if (valIsOneOfList(cmd, cmdListify('file-size,2'))) {
@@ -516,7 +846,6 @@ async function main() {
 }
 runasync(main)
 
-// tsx ./src/cli.ts 0 00 00
 // tsx ./src/cli.ts file-zise --cmd file-size
 // tsx ./src/cli.ts file-zise ./packages/jcm
 
