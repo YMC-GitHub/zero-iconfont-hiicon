@@ -1,3 +1,13 @@
+## font design
+- [ ] font-carrier
+```bash
+pnpm add font-carrier;pnpm add -D @types/font-carrier;
+
+
+# [font-carrier](https://github.com/purplebamboo/font-carrier)
+# [font-collector](https://github.com/JailBreakC/font-collector)
+```
+
 ## make *.svg files
 
 - [ ] make your logo and other images to *.svg files (from *.png,*.jpg files )
@@ -24,7 +34,7 @@ cp ./svg/2.svg icons/setting.svg
 - [ ] merge some *.svg files to one svg file (svg sprite?)
 
 - the main content of this file iconfont.svg
-```svg
+```xml
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" >
 <svg xmlns="http://www.w3.org/2000/svg">
@@ -56,12 +66,13 @@ cp ./svg/2.svg icons/setting.svg
 
 ```powershell
 pnpm add -g svgo;
-
 svgo src/assets/home.svg -o src/assets/home.min.svg
 svgo src/assets/home.svg -o src/assets/icon/home.svg
 # svgo home.svg -o home.min.svg
 # svgo -f src/iconfont -o asset/iconfont
 ```
+
+
 
 
 ## make font files
