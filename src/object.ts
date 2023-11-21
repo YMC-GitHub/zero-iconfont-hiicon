@@ -299,7 +299,7 @@ function cloneSpecificValue(val: any) {
 /**
  * Recursive cloning array.
  */
-function deepCloneArray(arr: any[]) {
+export function deepCloneArray(arr: any[]) {
     let clone: any[] = [];
     arr.forEach(function (item, index) {
         if (typeof item === 'object' && item !== null) {
