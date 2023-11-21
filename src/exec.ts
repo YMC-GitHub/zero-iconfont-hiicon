@@ -2,20 +2,20 @@
 // import type {Options as iconvOptions} from "iconv-lite";
 import { exec } from 'child_process'
 
-export type  ExecOption = Record<string,any>
-export type  CmdOption = string[]
+export type ExecOption = Record<string, any>
+export type CmdOption = string[]
 export interface ExecOptionLike {
-    exec?:(error: any, stdout: string, stderr: string) => void,
-    exitWhenErr?:boolean,
-    noTrimOut?:boolean,
-    rejectStderr?:boolean
-    fixUnreadbleCode?:(iconv: any)=> (code: any, encoding?: string, binaryEncoding?: string) => any
-    iconvDesEncoding?:string,
-    iconvSrcEncoding?:string
+    exec?: (error: any, stdout: string, stderr: string) => void,
+    exitWhenErr?: boolean,
+    noTrimOut?: boolean,
+    rejectStderr?: boolean
+    fixUnreadbleCode?: (iconv: any) => (code: any, encoding?: string, binaryEncoding?: string) => any
+    iconvDesEncoding?: string,
+    iconvSrcEncoding?: string
 }
 // type run = (error: any, stdout: string, stderr: string) => void
 
-export const execOpts:ExecOption = {exec}
+export const execOpts: ExecOption = { exec }
 
 /**
  * exec wraper
@@ -30,11 +30,11 @@ export const execOpts:ExecOption = {exec}
  * await exec(`git --version`,execOpts) //correct
  * ```
  */
-export function execWraper(cmd:string, cmdOpts:string|CmdOption|ExecOption, execOpts?:ExecOption) {
+export function execWraper(cmd: string, cmdOpts: string | CmdOption | ExecOption, execOpts?: ExecOption) {
 
     return new Promise((resolve, reject) => {
-        let [cli, execOption] = stdInput(cmd,cmdOpts,execOpts)
-         // @ts-ignore
+        let [cli, execOption] = stdInput(cmd, cmdOpts, execOpts)
+        // @ts-ignore
         // fix: exec is optional in execOpts
         const run = execOption.exec ? execOption.exec : exec
         // delete execOption.exec; //desc:clean some property to keep execOption as native
@@ -45,7 +45,7 @@ export function execWraper(cmd:string, cmdOpts:string|CmdOption|ExecOption, exec
 
         // support exe opt : exec(cmd,execOption,callback)
         // https://stackoverflow.com/questions/18894433/nodejs-child-process-working-directory
-        run(cli, execOption, (e:any, stdout:string, stderr:string) => {
+        run(cli, execOption, (e: any, stdout: string, stderr: string) => {
 
             // todo: run hook name 'post' here
             // ...
@@ -116,7 +116,7 @@ export function stdInput(cmd: string, cmdOpts: string | CmdOption | ExecOption, 
     // 'a b' or ['a','b'] -> 'a b'
     const option = ensureString(cmdOption)
 
-    let cli:string = cmd ? `${cmd} ${option}` : `${option}`
+    let cli: string = cmd ? `${cmd} ${option}` : `${option}`
 
     return [cli, execOption]
 }
@@ -130,7 +130,7 @@ export function ensureString(s: string | string[], splitChar = ' ') {
     return Array.isArray(s) ? s.join(splitChar) : s
 }
 
-export function trimStd(stdout:string) {
+export function trimStd(stdout: string) {
     // data: \r\n -> \n
     // handle: str2arr,trim,no-empty,arr2str
     return stdout
@@ -163,7 +163,7 @@ export function trimStd(stdout:string) {
 export function defFixUnreadbleCode(iconv) {
     // why: Simplified Chinese windows command line, all use CP936 (similar to gb2312) code, nodejs to utf8 identification is a problem.
     // how to : Binary is used to store the output text, and iconv is used to parse it in cp936.
-    return function (code:any, encoding:string = 'cp936', binaryEncoding:any = 'binary') {
+    return function (code: any, encoding: string = 'cp936', binaryEncoding: any = 'binary') {
         iconv.skipDecodeWarning = true
         return iconv.decode(Buffer.from(code, binaryEncoding), encoding)
     }
@@ -185,7 +185,7 @@ export function defFixUnreadbleCode(iconv) {
  * await exec(`dir`, execOpts);
  * ```
  */
-export function setExecOptsForIconv(iconv:any, execOpts:ExecOption) {
+export function setExecOptsForIconv(iconv: any, execOpts: ExecOption) {
     // fix Assignment to property of function parameter 'execOpts'  no-param-reassign
     /* eslint-disable no-param-reassign */
     // std 1.1 set execOpts.encoding as 'binary' || 'buffer'
@@ -207,8 +207,8 @@ export function setExecOptsForIconv(iconv:any, execOpts:ExecOption) {
  * execWraper(cmd,execOpts)
  * ```
  */
-export function rejectStderr(execOpts:ExecOption,switcher:boolean=true){
-    execOpts.rejectStderr=switcher
+export function rejectStderr(execOpts: ExecOption, switcher: boolean = true) {
+    execOpts.rejectStderr = switcher
     return execOpts
 }
 
@@ -221,8 +221,8 @@ export function rejectStderr(execOpts:ExecOption,switcher:boolean=true){
  * execWraper(cmd,execOpts)
  * ```
  */
-export function noTrimOut(execOpts:ExecOption,switcher:boolean=true){
-    execOpts.noTrimOut=switcher
+export function noTrimOut(execOpts: ExecOption, switcher: boolean = true) {
+    execOpts.noTrimOut = switcher
     return execOpts
 }
 
@@ -235,35 +235,35 @@ export function noTrimOut(execOpts:ExecOption,switcher:boolean=true){
  * execWraper(cmd,execOpts)
  * ```
  */
-export function exitWhenErr(execOpts:ExecOption,switcher:boolean=true){
-    execOpts.exitWhenErr=switcher
+export function exitWhenErr(execOpts: ExecOption, switcher: boolean = true) {
+    execOpts.exitWhenErr = switcher
     return execOpts
 }
 
-async function demo(){
+async function demo() {
     // setExecOptsForIconv(iconv,execOpts)
-    let res = await execWraper(`dir`,execOpts)
+    let res = await execWraper(`dir`, execOpts)
     console.log(res)
 }
 
 
 
-// script-file-entry-detect
+// // script-file-entry-detect
 
-// import { dirname } from "node:path"
-import { fileURLToPath } from "node:url"
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = dirname(__filename);
-// file:///D:/code/xx ->  D:\code\xx
-// console.log(import.meta.url,__filename)
-// console.log(process.argv.slice(0,2))
-export function mockMagicMain(){
-    return process.argv.slice(0,2).includes(fileURLToPath(import.meta.url))
-}
+// // import { dirname } from "node:path"
+// import { fileURLToPath } from "node:url"
+// // const __filename = fileURLToPath(import.meta.url);
+// // const __dirname = dirname(__filename);
+// // file:///D:/code/xx ->  D:\code\xx
+// // console.log(import.meta.url,__filename)
+// // console.log(process.argv.slice(0,2))
+// export function mockMagicMain() {
+//     return process.argv.slice(0, 2).includes(fileURLToPath(import.meta.url))
+// }
 
-// mock python __main
-const __main = mockMagicMain();
-if(__main) demo();
+// // mock python __main
+// const __main = mockMagicMain();
+// if (__main) demo();
 
 
 // tsx src/exec.ts
