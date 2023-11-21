@@ -145,7 +145,7 @@ function updateCacheInPickOmit(cache: Commitlog[], key: string = 'file', option:
     // filter-order:'file-omit,file-pick'
     delCommitlogLikeOmit(cache, omitedCommitlog)
     // addCommitlogLikePick(cache, pickedCommitlog)
-    return option.pickFile ? pickedCommitlog : cache
+    return option[camelize(`pick-${key}`)] ? pickedCommitlog : cache
     // log(omitedCommitlog, pickedCommitlog, cache)
 }
 function onlyInPick(cache: Commitlog[], picked: Commitlog[]) {
@@ -190,7 +190,8 @@ function omitFileLike(data: Commitlog[], key: string = 'file', omitFile: string 
             // console.log(`[omit-${key}] `, file)
             let res: boolean
             // res= file.some(v => isOneOfThem(v, omitFile))
-            res = file.some(act => rules.includes(act))
+            // res = file.some(act => rules.includes(act))
+            res = file.some(act => isOneOfThem(act, omitFile))
             // res = !res
             // log([`[omit-${key}] omit:`, omitFile, 'act:', file.join(','), res].join(' '))
             return res
@@ -209,7 +210,9 @@ function pickFileLike(data: Commitlog[], key: string = 'file', pickFile: string 
             let res: boolean
             // res= file.some(v => isOneOfThem(v, pickFile))
             // res = file.some(v => isOneOfThem(v, pickFile))
-            res = file.some(act => rules.includes(act))
+            // res = file.some(act => rules.includes(act))
+            res = file.some(act => isOneOfThem(act, pickFile))
+
             // log([`[pick-${key}] pick:`, pickFile, 'act:', file.join(','), res].join(' '))
             return res
         })
@@ -217,18 +220,25 @@ function pickFileLike(data: Commitlog[], key: string = 'file', pickFile: string 
     return cache
 }
 
-function isOneOfThem(one: string, them: string) {
-    if (!them) return false
-    let isReg = them.indexOf('*') >= 0
-    let input: string[] = them.split(",").map(v => v.trim()).filter(v => v)
-    if (isReg) {
-        // feat: regard * as .*
-        let inputReg = input.map(v => v.replace(/\*/g, '.*')).map(v => new RegExp(`^${v}`))
-        // list = list.filter(vl => !inputReg.some(reg => reg.test(vl)))
-        return inputReg.some(reg => reg.test(one))
-    }
-    return input.includes(them)
+function isOneOfThem(one: string, them: string | RegExp[]) {
+    // if (!them) return false
+    // let isReg = them.indexOf('*') >= 0
+    // let input: string[] = them.split(",").map(v => v.trim()).filter(v => v)
+    // if (isReg) {
+    //     // feat: regard * as .*
+    //     let inputReg = input.map(v => v.replace(/\*/g, '.*')).map(v => new RegExp(`^${v}`))
+    //     // list = list.filter(vl => !inputReg.some(reg => reg.test(vl)))
+    //     return inputReg.some(reg => reg.test(one))
+    // }
+    // return input.includes(them)
+    let input = Array.isArray(them) ? them : themRegify(them)
+    return input.some(reg => reg.test(one))
+
 }
 function themArrayify(them: string | string[]) {
     return Array.isArray(them) ? them : them.split(",").map(v => v.trim()).filter(v => v)
+}
+function themRegify(them: string | string[]) {
+    let input = themArrayify(them)
+    return input.map(v => v.replace(/\*/g, '.*')).map(v => new RegExp(`^${v}`))
 }
