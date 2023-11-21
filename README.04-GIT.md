@@ -1,4 +1,4 @@
-## basic do
+## in shell - basic do
 
 - [x] set git default branch
 ```bash
@@ -86,22 +86,114 @@ git add .gitattributes ; git commit -m "build(core): disable other with linguist
 git mv iconfont* ./dist ; git mv demo* ./dist;git commit -m "build(core): move iconfont to dist";
 ```
 
-
-- [ ] get time with format
+## in shell - commit files with custom date
+- [x] get last commit time
 ```bash
-format="+%Y-%m-%d %H:%M:%S";time="2021-05-18 13:12:19";date -d "$time" "$format";
+git log --pretty=format:"[%ad] %s" --date=format:"%Y-%m-%d %H:%M:%S" -n 1 
 ```
 
-- [ ] git commit files with custom date
+- [x] get time with format
 ```bash
-git commit -m "chore(core): update readme in github action" --date "$(date "+%Y-%m-%d %H:%M:%S" -d "+8 hour") +0800"
+# format="+%Y-%m-%d %H:%M:%S";time="2021-05-18 13:12:19";date -d "$time" "$format";
+format="+%Y-%m-%d %H:%M:%S";time="2023-11-05 08:00:00";timestr=`date -d "$time" "$format"`;
+echo $timestr
+
+```
+
+- [x] git commit files with custom date
+```bash
+# git commit -m "chore(core): update readme in github action" --date "$(date "+%Y-%m-%d %H:%M:%S" -d "+8 hour") +0800"
+
+format="+%Y-%m-%d %H:%M:%S";time="2023-11-05 08:00:00";timestr=`date -d "$time" "$format"`;git commit -m "feat(core): update cli param" --date "$timestr +0800"
 ```
 
 - [x] add icon for home, setting and menue
 ```bash
 git add iconfont*; git commit -m "feat(core): add icon for home, setting and menue";
-
 ```
+
+
+## in shell - commit files with chaneged files
+- [x] get changed files
+```bash
+git ls-files --modified | grep 'src/*' # bash
+# git ls-files --modified | findstr 'src/*'# powershell
+
+# todo: yours get-changed-files *param*
+# todo: yours get-changed-files *param* --save location
+# todo: yours get-changed-files -h
+```
+
+- [x] add  changed files
+```bash
+files=`git ls-files --modified | grep 'src/*' `; echo $files;
+git add $files
+
+# todo: yours add-changed-files *param*
+```
+
+- [x] cmt files with msg
+```bash
+# git commit --file xx --date xx;
+# git commit -m xx --date xx;
+# git commit -m "feat(core): update cli param" --date "$(date "+%Y-%m-%d %H:%M:%S" -d "+8 hour") +0800"
+
+git commit -m "feat(core): update cli param"
+```
+
+- [x] cmt files with msg and date
+```bash
+# git log --pretty=format:"[%ad] %s" --date=format:"%Y-%m-%d %H:%M:%S" | grep param
+format="+%Y-%m-%d %H:%M:%S";time="2023-11-05 08:00:00";timestr=`date -d "$time" "$format"`;git commit -m "feat(core): update cli param" --date "$timestr +0800"
+```
+
+## in shell -commit files with untracked files
+- [x] get untracked files
+```bash
+files=`git ls-files --others --exclude-standard`;echo $files
+```
+
+
+## in yours - commit files of pkg changelog
+```bash
+# git log --pretty=format:"[%ad] %s" --date=format:"%Y-%m-%d %H:%M:%S" | grep changelog
+# git log --pretty=format:"[%ad] %s" --date=format:"%Y-%m-%d %H:%M:%S" | findstr changelog
+git log --pretty=format:"[%ad] %s" --date=format:"%Y-%m-%d %H:%M:%S" -n 1 
+
+yours get-changed-files  src/changelog*
+yours add-changed-files  src/changelog*
+
+# yours get-untracked-files src/changelog*
+yours get-untracked-files src/changelog*
+yours add-untracked-files src/changelog*
+
+format="+%Y-%m-%d %H:%M:%S";time="2023-11-05 08:00:00";timestr=`date -d "$time" "$format"`;git commit -m "build(core): add func to gen changelog" --date "$timestr +0800"
+yours cmt-files --msg "build(core): put func to gen changelog" 
+```
+
+## in yours - commit files of pkg commitlog
+```bash
+yours get-untracked-files "src/commitlog*" # do no use src/commitlog* in bash, please wrap with " or ''
+yours add-untracked-files "src/commitlog*" 
+
+yours get-changed-files "src/commitlog*"
+yours add-changed-files "src/commitlog*"
+# format="+%Y-%m-%d %H:%M:%S";time="2023-11-06 08:00:00";timestr=`date -d "$time" "$format"`;git commit -m "build(core): add func to  manage commitlog" --date "$timestr +0800"
+# --date-format "+%Y-%m-%d %H:%M:%S" --date "2023-11-06 08:00:00" --msg "build(core): add func to  manage commitlog" --time-zone "+0800"
+```
+
+## in yours - commit files of pkg commitpkg
+```bash
+# format="+%Y-%m-%d %H:%M:%S";time="2023-11-06 08:00:00";timestr=`date -d "$time" "$format"`;echo $timestr
+# in vscode - in powershell terminal:
+yours get-changed-files "src/commitpkg*"
+yours add-changed-files "src/commitpkg*"
+yours get-untracked-files "src/commitpkg*"
+yours add-untracked-files "src/commitpkg*"
+yours cmt-files --msg "build(core): add func to  manage commitpkg" --date-format 'yyyy-MM-dd HH:mm:ss' --time "2023-11-07 08:00:00"  --time-zone "+0800"
+yours cmt-files --msg "build(core): put func to  manage commitpkg" 
+```
+## others
 
 - [x] add demo for home, setting and menue
 ```bash
@@ -300,8 +392,51 @@ git add src/cli.ts src/touch.ts;git commit -m "build(core): add script to touch 
 git add src/cli.ts src/touch.ts;git commit -m "build(core): put script to touch file in nodejs to share its util";
 git add src/cli.ts src/editjson.ts;git commit -m "build(core): add script to edit json file in nodejs";
 git add src/cli.ts src/editjson.ts;git commit -m "build(core): put script to edit json file in nodejs";
+git add src/cli.ts src/editjson.ts;git commit -m "build(core): fix github url";
+git add src/cli.ts src/editjson.ts;git commit -m "build(core): edit json in namespace";
+git add src/editjson.ts;git commit -m "style(core): auto fomat when save";
+
+git add src/cli.ts src/download.ts;git commit -m "build(core): add script to download file from remote";
+git add src/cli.ts src/globy.ts;git commit -m "build(core): add script to globy file list or other";
+git add src/cli.ts src/globy.ts;git commit -m "build(core): ensure not starts with './' ";
+git add src/size-to-kb.ts;git commit -m "build(core): add lib to make size to human-reable in node.js";
+
+git add src/cli.ts src/rm.ts;git commit -m "build(core): add script to cp,rm,mv resource in node.js";
+git add src/cli.ts src/exec.ts;git commit -m "build(core): add script to run cmd in node.js";
+git add src/cli.ts src/exec.ts;git commit -m "build(core): use iconv lite as peer";
+git add src/file-size.ts;git commit -m "build(core): stdify path";
+
+git add src/cli.ts src/git.ts src/jsonstreamio.ts;git commit -m "build(core): add script to parse git commit msg history to json in node.js";
+git mv src/git.ts src/commitlog.ts; git add src/cli.ts;git commit -m "build(core): rename file from git.ts ot commitlog.ts";
+git add src/commitlog.ts;git commit -m "refactor(core): split to chunk";
+
+
+git add src/ansi-color.ts;git commit -m "build(core): encode text to ansi color or decode from it";
+git add src/ansi-color-symbol.ts;git commit -m "build(core): add ansi color symbol";
+git add src/info.ts;git commit -m "build(core): add func to info msg";
+git add src/info.ts;git commit -m "build(core): allow custom log func";
+
+git add src/date.ts;git commit -m "build(core): add func to format date";
+git add src/date.ts;git commit -m "build(core): add func to change date";
+git add src/string*.ts;git commit -m "build(core): add func to handle string";
+git add src/stream*.ts;git commit -m "build(core): add func to handle stream";
+git add src/object*.ts;git commit -m "build(core): add func to handle object";
+git add src/nano*.ts;git commit -m "build(core): add func to handle nano args";
+git add src/nano*.ts;git commit -m "build(core): add func to handle nano args";
+
+
+ 
+
+git add src/text-file-io-stream*.ts;git commit -m "build(core): add func to handle text-file & stream & promise";
+git add src/text-plain-template.ts;git commit -m "build(core): add func to write or render text";
+git add src/path.ts;git commit -m "build(core): add func to mock some nodejs path handle";
+git add src/cli-param*.ts;git commit -m "build(core): add func to handle cli-param-like";
+
+git add src/commitpkg*.ts;git commit -m "build(core): add func to collect commited pkg";
+git add src/changelog*.ts;git commit -m "build(core): add func to gen changelog";
+
 
 git add package.json;git commit -m "build(core): enable npm workspace";
 git add package/noop;git commit -m "build(core): add script package noop in this workspace";
-
+git add package/noop;git commit -m "build(core): fix github url";
 ```
